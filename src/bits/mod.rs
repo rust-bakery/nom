@@ -15,26 +15,7 @@ use crate::Input;
 /// away.
 ///
 /// # Example
-/// ```
-/// use nom::bits::{bits, streaming::take};
-/// use nom::error::Error;
-/// use nom::IResult;
-///
-/// fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8)> {
-///     bits::<_, _, Error<(&[u8], usize)>, _, _>((take(4usize), take(8usize)))(input)
-/// }
-///
-/// let input = &[0x12, 0x34, 0xff, 0xff];
-///
-/// let output = parse(input).expect("We take 1.5 bytes and the input is longer than 2 bytes");
-///
-/// // The first byte is consumed, the second byte is partially consumed and dropped.
-/// let remaining = output.0;
-/// assert_eq!(remaining, [0xff, 0xff]);
-///
-/// let parsed = output.1;
-/// assert_eq!(parsed.0, 0x01);
-/// assert_eq!(parsed.1, 0x23);
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 pub fn bits<I, O, E1, E2, P>(mut parser: P) -> impl FnMut(I) -> IResult<I, O, E2>
 where
@@ -63,23 +44,7 @@ where
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
 /// at the next full byte.
 ///
-/// ```
-/// use nom::bits::{bits, bytes, streaming::take};
-/// use nom::combinator::rest;
-/// use nom::error::Error;
-/// use nom::IResult;
-///
-/// fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8, &[u8])> {
-///   bits::<_, _, Error<(&[u8], usize)>, _, _>((
-///     take(4usize),
-///     take(8usize),
-///     bytes::<_, _, Error<&[u8]>, _, _>(rest)
-///   ))(input)
-/// }
-///
-/// let input = &[0x12, 0x34, 0xff, 0xff];
-///
-/// assert_eq!(parse( input ), Ok(( &[][..], (0x01, 0x23, &[0xff, 0xff][..]) )));
+/// ```rust,{source="doctests::example_2"},ignore
 /// ```
 pub fn bytes<I, O, E1, E2, P>(mut parser: P) -> impl FnMut((I, usize)) -> IResult<(I, usize), O, E2>
 where
@@ -170,5 +135,53 @@ mod test {
     assert!(result.is_err());
     let error = result.err().unwrap();
     assert_eq!("Parsing requires 2 bytes/chars", error.to_string());
+  }
+}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+
+  #[test]
+  fn example_1() {
+    use nom::bits::{bits, streaming::take};
+    use nom::error::Error;
+    use nom::IResult;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8)> {
+      bits::<_, _, Error<(&[u8], usize)>, _, _>((take(4usize), take(8usize)))(input)
+    }
+
+    let input = &[0x12, 0x34, 0xff, 0xff];
+
+    let output = parse(input).expect("We take 1.5 bytes and the input is longer than 2 bytes");
+
+    // The first byte is consumed, the second byte is partially consumed and dropped.
+    let remaining = output.0;
+    assert_eq!(remaining, [0xff, 0xff]);
+
+    let parsed = output.1;
+    assert_eq!(parsed.0, 0x01);
+    assert_eq!(parsed.1, 0x23);
+  }
+
+  #[test]
+  fn example_2() {
+    use nom::bits::{bits, bytes, streaming::take};
+    use nom::combinator::rest;
+    use nom::error::Error;
+    use nom::IResult;
+
+    fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8, &[u8])> {
+      bits::<_, _, Error<(&[u8], usize)>, _, _>((
+        take(4usize),
+        take(8usize),
+        bytes::<_, _, Error<&[u8]>, _, _>(rest),
+      ))(input)
+    }
+
+    let input = &[0x12, 0x34, 0xff, 0xff];
+
+    assert_eq!(parse(input), Ok((&[][..], (0x01, 0x23, &[0xff, 0xff][..]))));
   }
 }

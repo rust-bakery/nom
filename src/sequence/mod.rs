@@ -15,17 +15,7 @@ use crate::{Check, OutputM, OutputMode, PResult};
 /// * `second` The second parser to apply.
 ///
 /// # Example
-/// ```rust
-/// use nom::sequence::pair;
-/// use nom::bytes::complete::tag;
-/// use nom::{error::ErrorKind, Err, Parser};
-///
-/// let mut parser = pair(tag("abc"), tag("efg"));
-///
-/// assert_eq!(parser.parse("abcefg"), Ok(("", ("abc", "efg"))));
-/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
   first: F,
@@ -45,18 +35,7 @@ where
 /// * `first` The opening parser.
 /// * `second` The second parser to get object.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, Parser};
-/// # use nom::Needed::Size;
-/// use nom::sequence::preceded;
-/// use nom::bytes::complete::tag;
-///
-/// let mut parser = preceded(tag("abc"), tag("efg"));
-///
-/// assert_eq!(parser.parse("abcefg"), Ok(("", "efg")));
-/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", "efg")));
-/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_2"},ignore
 /// ```
 pub fn preceded<I, O, E: ParseError<I>, F, G>(
   first: F,
@@ -102,18 +81,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `first` The first parser to apply.
 /// * `second` The second parser to match an object.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, Parser};
-/// # use nom::Needed::Size;
-/// use nom::sequence::terminated;
-/// use nom::bytes::complete::tag;
-///
-/// let mut parser = terminated(tag("abc"), tag("efg"));
-///
-/// assert_eq!(parser.parse("abcefg"), Ok(("", "abc")));
-/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", "abc")));
-/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_3"},ignore
 /// ```
 pub fn terminated<I, O, E: ParseError<I>, F, G>(
   first: F,
@@ -161,18 +129,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `sep` The separator parser to apply.
 /// * `second` The second parser to apply.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, Parser};
-/// # use nom::Needed::Size;
-/// use nom::sequence::separated_pair;
-/// use nom::bytes::complete::tag;
-///
-/// let mut parser = separated_pair(tag("abc"), tag("|"), tag("efg"));
-///
-/// assert_eq!(parser.parse("abc|efg"), Ok(("", ("abc", "efg"))));
-/// assert_eq!(parser.parse("abc|efghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_4"},ignore
 /// ```
 pub fn separated_pair<I, O1, O2, E: ParseError<I>, F, G, H>(
   first: F,
@@ -196,18 +153,7 @@ where
 /// * `second` The second parser to apply.
 /// * `third` The third parser to apply and discard.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, Parser};
-/// # use nom::Needed::Size;
-/// use nom::sequence::delimited;
-/// use nom::bytes::complete::tag;
-///
-/// let mut parser = delimited(tag("("), tag("abc"), tag(")"));
-///
-/// assert_eq!(parser.parse("(abc)"), Ok(("", "abc")));
-/// assert_eq!(parser.parse("(abc)def"), Ok(("def", "abc")));
-/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_5"},ignore
 /// ```
 pub fn delimited<I, O, E: ParseError<I>, F, G, H>(
   first: F,
@@ -303,14 +249,7 @@ impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
 
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
 ///There is a maximum of 21 parsers
-/// ```rust
-/// # use nom::{Err, error::ErrorKind};
-/// use nom::sequence::tuple;
-/// use nom::character::complete::{alpha1, digit1};
-/// let mut parser = tuple((alpha1, digit1, alpha1));
-///
-/// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
-/// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
+/// ```rust,{sourc="doctests::example_6"},ignore
 /// ```
 #[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
 #[allow(deprecated)]
@@ -318,4 +257,105 @@ pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.parse_tuple(i)
+}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+  use nom::Needed::Size;
+  use nom::{error::ErrorKind, Err, Needed, Parser};
+
+  #[test]
+  fn example_1() {
+    use nom::bytes::complete::tag;
+    use nom::sequence::pair;
+    use nom::{error::ErrorKind, Err, Parser};
+
+    let mut parser = pair(tag("abc"), tag("efg"));
+
+    assert_eq!(parser.parse("abcefg"), Ok(("", ("abc", "efg"))));
+    assert_eq!(parser.parse("abcefghij"), Ok(("hij", ("abc", "efg"))));
+    assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+    assert_eq!(
+      parser.parse("123"),
+      Err(Err::Error(("123", ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_2() {
+    use nom::bytes::complete::tag;
+    use nom::sequence::preceded;
+
+    let mut parser = preceded(tag("abc"), tag("efg"));
+
+    assert_eq!(parser.parse("abcefg"), Ok(("", "efg")));
+    assert_eq!(parser.parse("abcefghij"), Ok(("hij", "efg")));
+    assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+    assert_eq!(
+      parser.parse("123"),
+      Err(Err::Error(("123", ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_3() {
+    use nom::bytes::complete::tag;
+    use nom::sequence::terminated;
+
+    let mut parser = terminated(tag("abc"), tag("efg"));
+
+    assert_eq!(parser.parse("abcefg"), Ok(("", "abc")));
+    assert_eq!(parser.parse("abcefghij"), Ok(("hij", "abc")));
+    assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+    assert_eq!(
+      parser.parse("123"),
+      Err(Err::Error(("123", ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_4() {
+    use nom::bytes::complete::tag;
+    use nom::sequence::separated_pair;
+
+    let mut parser = separated_pair(tag("abc"), tag("|"), tag("efg"));
+
+    assert_eq!(parser.parse("abc|efg"), Ok(("", ("abc", "efg"))));
+    assert_eq!(parser.parse("abc|efghij"), Ok(("hij", ("abc", "efg"))));
+    assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+    assert_eq!(
+      parser.parse("123"),
+      Err(Err::Error(("123", ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_5() {
+    use nom::bytes::complete::tag;
+    use nom::sequence::delimited;
+
+    let mut parser = delimited(tag("("), tag("abc"), tag(")"));
+
+    assert_eq!(parser.parse("(abc)"), Ok(("", "abc")));
+    assert_eq!(parser.parse("(abc)def"), Ok(("def", "abc")));
+    assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+    assert_eq!(
+      parser.parse("123"),
+      Err(Err::Error(("123", ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_6() {
+    use nom::character::complete::{alpha1, digit1};
+    use nom::sequence::tuple;
+    let mut parser = tuple((alpha1, digit1, alpha1));
+
+    assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
+    assert_eq!(
+      parser("123def"),
+      Err(Err::Error(("123def", ErrorKind::Alpha)))
+    );
+  }
 }

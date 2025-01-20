@@ -15,25 +15,7 @@ use crate::internal::{Err, Mode, Parser};
 /// tuple, there is a maximum of 21 parsers. If you need more, it is possible to
 /// use an array.
 ///
-/// ```rust
-/// # use nom::error_position;
-/// # use nom::{Err,error::ErrorKind, Needed, IResult, Parser};
-/// use nom::character::complete::{alpha1, digit1};
-/// use nom::branch::alt;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///   alt((alpha1, digit1)).parse(input)
-/// };
-///
-/// // the first parser, alpha1, recognizes the input
-/// assert_eq!(parser("abc"), Ok(("", "abc")));
-///
-/// // the first parser returns an error, so alt tries the second one
-/// assert_eq!(parser("123456"), Ok(("", "123456")));
-///
-/// // both parsers failed, and with the default error type, alt will return the last error
-/// assert_eq!(parser(" "), Err(Err::Error(error_position!(" ", ErrorKind::Digit))));
-/// # }
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 ///
 /// With a custom error type, it is possible to have alt return the error of the parser
@@ -48,43 +30,13 @@ pub fn alt<List>(l: List) -> Choice<List> {
 /// It takes as argument a tuple of parsers, and returns a
 /// tuple of the parser results.
 ///
-/// ```rust
-/// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::character::complete::{alpha1, digit1};
-/// use nom::branch::permutation;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, (&str, &str)> {
-///   permutation((alpha1, digit1)).parse(input)
-/// }
-///
-/// // permutation recognizes alphabetic characters then digit
-/// assert_eq!(parser("abc123"), Ok(("", ("abc", "123"))));
-///
-/// // but also in inverse order
-/// assert_eq!(parser("123abc"), Ok(("", ("abc", "123"))));
-///
-/// // it will fail if one of the parsers failed
-/// assert_eq!(parser("abc;"), Err(Err::Error(Error::new(";", ErrorKind::Digit))));
-/// # }
+/// ```rust,{source="doctests::example_2"},ignore
 /// ```
 ///
 /// The parsers are applied greedily: if there are multiple unapplied parsers
 /// that could parse the next slice of input, the first one is used.
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Parser};
-/// use nom::branch::permutation;
-/// use nom::character::complete::{anychar, char};
 ///
-/// fn parser(input: &str) -> IResult<&str, (char, char)> {
-///   permutation((anychar, char('a'))).parse(input)
-/// }
-///
-/// // anychar parses 'b', then char('a') parses 'a'
-/// assert_eq!(parser("ba"), Ok(("", ('b', 'a'))));
-///
-/// // anychar parses 'a', then char('a') fails on 'b',
-/// // even though char('a') followed by anychar would succeed
-/// assert_eq!(parser("ab"), Err(Err::Error(Error::new("b", ErrorKind::Char))));
+/// ```rust,{source="doctests::example_3"},ignore
 /// ```
 ///
 pub fn permutation<I: Clone, E: ParseError<I>, List>(list: List) -> Permutation<List, E> {
@@ -370,3 +322,77 @@ permutation_trait!(
   FnT T t
   FnU U u
 );
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+  use nom::error_position;
+  use nom::{
+    error::{Error, ErrorKind},
+    Err, IResult, Parser,
+  };
+
+  #[test]
+  fn example_1() {
+    use nom::branch::alt;
+    use nom::character::complete::{alpha1, digit1};
+
+    fn parser(input: &str) -> IResult<&str, &str> {
+      alt((alpha1, digit1)).parse(input)
+    }
+
+    // the first parser, alpha1, recognizes the input
+    assert_eq!(parser("abc"), Ok(("", "abc")));
+
+    // the first parser returns an error, so alt tries the second one
+    assert_eq!(parser("123456"), Ok(("", "123456")));
+
+    // both parsers failed, and with the default error type, alt will return the last error
+    assert_eq!(
+      parser(" "),
+      Err(Err::Error(error_position!(" ", ErrorKind::Digit)))
+    );
+  }
+
+  #[test]
+  fn example_2() {
+    use nom::branch::permutation;
+    use nom::character::complete::{alpha1, digit1};
+
+    fn parser(input: &str) -> IResult<&str, (&str, &str)> {
+      permutation((alpha1, digit1)).parse(input)
+    }
+
+    // permutation recognizes alphabetic characters then digit
+    assert_eq!(parser("abc123"), Ok(("", ("abc", "123"))));
+
+    // but also in inverse order
+    assert_eq!(parser("123abc"), Ok(("", ("abc", "123"))));
+
+    // it will fail if one of the parsers failed
+    assert_eq!(
+      parser("abc;"),
+      Err(Err::Error(Error::new(";", ErrorKind::Digit)))
+    );
+  }
+
+  #[test]
+  fn example_3() {
+    use nom::branch::permutation;
+    use nom::character::complete::{anychar, char};
+
+    fn parser(input: &str) -> IResult<&str, (char, char)> {
+      permutation((anychar, char('a'))).parse(input)
+    }
+
+    // anychar parses 'b', then char('a') parses 'a'
+    assert_eq!(parser("ba"), Ok(("", ('b', 'a'))));
+
+    // anychar parses 'a', then char('a') fails on 'b',
+    // even though char('a') followed by anychar would succeed
+    assert_eq!(
+      parser("ab"),
+      Err(Err::Error(Error::new("b", ErrorKind::Char)))
+    );
+  }
+}

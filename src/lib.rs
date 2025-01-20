@@ -5,50 +5,7 @@
 //!
 //! ## Example
 //!
-//! ```rust
-//! use nom::{
-//!   IResult,
-//!   Parser,
-//!   bytes::complete::{tag, take_while_m_n},
-//!   combinator::map_res
-//! };
-//!
-//! #[derive(Debug,PartialEq)]
-//! pub struct Color {
-//!   pub red:     u8,
-//!   pub green:   u8,
-//!   pub blue:    u8,
-//! }
-//!
-//! fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
-//!   u8::from_str_radix(input, 16)
-//! }
-//!
-//! fn is_hex_digit(c: char) -> bool {
-//!   c.is_digit(16)
-//! }
-//!
-//! fn hex_primary(input: &str) -> IResult<&str, u8> {
-//!   map_res(
-//!     take_while_m_n(2, 2, is_hex_digit),
-//!     from_hex
-//!   ).parse(input)
-//! }
-//!
-//! fn hex_color(input: &str) -> IResult<&str, Color> {
-//!   let (input, _) = tag("#")(input)?;
-//!   let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
-//!
-//!   Ok((input, Color { red, green, blue }))
-//! }
-//!
-//! fn main() {
-//!   assert_eq!(hex_color("#2F14DF"), Ok(("", Color {
-//!     red: 47,
-//!     green: 20,
-//!     blue: 223,
-//!   })));
-//! }
+//! ```rust,{source="doctests::example_1"},ignore
 //! ```
 //!
 //! The code is available on [GitHub](https://github.com/rust-bakery/nom)
@@ -86,19 +43,7 @@
 //!
 //! Here is an example of one such parser, to recognize text between parentheses:
 //!
-//! ```rust
-//! use nom::{
-//!   IResult,
-//!   Parser,
-//!   sequence::delimited,
-//!   // see the "streaming/complete" paragraph lower for an explanation of these submodules
-//!   character::complete::char,
-//!   bytes::complete::is_not
-//! };
-//!
-//! fn parens(input: &str) -> IResult<&str, &str> {
-//!   delimited(char('('), is_not(")"), char(')')).parse(input)
-//! }
+//! ```rust,{source="doctests::example_2"},ignore
 //! ```
 //!
 //! It defines a function named `parens` which will recognize a sequence of the
@@ -107,18 +52,7 @@
 //!
 //! Here is another parser, written without using nom's combinators this time:
 //!
-//! ```rust
-//! use nom::{IResult, Err, Needed};
-//!
-//! # fn main() {
-//! fn take4(i: &[u8]) -> IResult<&[u8], &[u8]>{
-//!   if i.len() < 4 {
-//!     Err(Err::Incomplete(Needed::new(4)))
-//!   } else {
-//!     Ok((&i[4..], &i[0..4]))
-//!   }
-//! }
-//! # }
+//! ```rust,{source="doctests::example_3"},ignore
 //! ```
 //!
 //! This function takes a byte array as input, and tries to consume 4 bytes.
@@ -128,11 +62,7 @@
 //!
 //! With functions, you would write it like this:
 //!
-//! ```rust
-//! use nom::{IResult, bytes::streaming::take};
-//! fn take4(input: &str) -> IResult<&str, &str> {
-//!   take(4u8)(input)
-//! }
+//! ```rust,{source="doctests::example_4"},ignore
 //! ```
 //!
 //! A parser in nom is a function which, for an input type `I`, an output type `O`
@@ -150,16 +80,7 @@
 //!
 //! `IResult` is an alias for the `Result` type:
 //!
-//! ```rust
-//! use nom::{Needed, error::Error};
-//!
-//! type IResult<I, O, E = Error<I>> = Result<(I, O), Err<E>>;
-//!
-//! enum Err<E> {
-//!   Incomplete(Needed),
-//!   Error(E),
-//!   Failure(E),
-//! }
+//! ```rust,{source="doctests::example_5"},ignore
 //! ```
 //!
 //! It can have the following values:
@@ -183,16 +104,7 @@
 //!
 //! Here are some examples:
 //!
-//! ```rust
-//! use nom::IResult;
-//! use nom::bytes::complete::{tag, take};
-//! fn abcd_parser(i: &str) -> IResult<&str, &str> {
-//!   tag("abcd")(i) // will consume bytes if the input begins with "abcd"
-//! }
-//!
-//! fn take_10(i: &[u8]) -> IResult<&[u8], &[u8]> {
-//!   take(10u8)(i) // will consume and return 10 bytes of input
-//! }
+//! ```rust,{source="doctests::example_6"},ignore
 //! ```
 //!
 //! ## Combining parsers
@@ -201,52 +113,18 @@
 //! provides a choice between multiple parsers. If one branch fails, it tries
 //! the next, and returns the result of the first parser that succeeds:
 //!
-//! ```rust
-//! use nom::{IResult, Parser};
-//! use nom::branch::alt;
-//! use nom::bytes::complete::tag;
-//!
-//! let mut alt_tags = alt((tag("abcd"), tag("efgh")));
-//!
-//! assert_eq!(alt_tags.parse(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
-//! assert_eq!(alt_tags.parse(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
-//! assert_eq!(alt_tags.parse(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
+//! ```rust,{source="doctests::example_7"},ignore
 //! ```
 //!
 //! The **`opt`** combinator makes a parser optional. If the child parser returns
 //! an error, **`opt`** will still succeed and return None:
 //!
-//! ```rust
-//! use nom::{IResult, Parser, combinator::opt, bytes::complete::tag};
-//! fn abcd_opt(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
-//!   opt(tag("abcd")).parse(i)
-//! }
-//!
-//! assert_eq!(abcd_opt(&b"abcdxxx"[..]), Ok((&b"xxx"[..], Some(&b"abcd"[..]))));
-//! assert_eq!(abcd_opt(&b"efghxxx"[..]), Ok((&b"efghxxx"[..], None)));
+//! ```rust,{source="doctests::example_8"},ignore
 //! ```
 //!
 //! **`many0`** applies a parser 0 or more times, and returns a vector of the aggregated results:
 //!
-//! ```rust
-//! # #[cfg(feature = "alloc")]
-//! # fn main() {
-//! use nom::{IResult, Parser, multi::many0, bytes::complete::tag};
-//! use std::str;
-//!
-//! fn multi(i: &str) -> IResult<&str, Vec<&str>> {
-//!   many0(tag("abcd")).parse(i)
-//! }
-//!
-//! let a = "abcdef";
-//! let b = "abcdabcdef";
-//! let c = "azerty";
-//! assert_eq!(multi(a), Ok(("ef",     vec!["abcd"])));
-//! assert_eq!(multi(b), Ok(("ef",     vec!["abcd", "abcd"])));
-//! assert_eq!(multi(c), Ok(("azerty", Vec::new())));
-//! # }
-//! # #[cfg(not(feature = "alloc"))]
-//! # fn main() {}
+//! ```rust,{source="doctests::example_9"},ignore
 //! ```
 //!
 //! Here are some basic combinators available:
@@ -260,59 +138,13 @@
 //!
 //! Example with a tuple of parsers:
 //!
-//! ```rust
-//! # fn main() {
-//! use nom::{
-//!   error::ErrorKind,
-//!   Needed,
-//!   Parser,
-//!   number::streaming::be_u16,
-//!   bytes::streaming::{tag, take}};
-//!
-//! let mut tpl = (be_u16, take(3u8), tag("fg"));
-//!
-//! assert_eq!(
-//!   tpl.parse(&b"abcdefgh"[..]),
-//!   Ok((
-//!     &b"h"[..],
-//!     (0x6162u16, &b"cde"[..], &b"fg"[..])
-//!   ))
-//! );
-//! assert_eq!(tpl.parse(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
-//! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl.parse(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
-//! # }
+//! ```rust,{source="doctests::example_10"},ignore
 //! ```
 //!
 //! But you can also use a sequence of combinators written in imperative style,
 //! thanks to the `?` operator:
 //!
-//! ```rust
-//! # fn main() {
-//! use nom::{IResult, bytes::complete::tag};
-//!
-//! #[derive(Debug, PartialEq)]
-//! struct A {
-//!   a: u8,
-//!   b: u8
-//! }
-//!
-//! fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,1)) }
-//! fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,2)) }
-//!
-//! fn f(i: &[u8]) -> IResult<&[u8], A> {
-//!   // if successful, the parser returns `Ok((remaining_input, output_value))` that we can destructure
-//!   let (i, _) = tag("abcd")(i)?;
-//!   let (i, a) = ret_int1(i)?;
-//!   let (i, _) = tag("efgh")(i)?;
-//!   let (i, b) = ret_int2(i)?;
-//!
-//!   Ok((i, A { a, b }))
-//! }
-//!
-//! let r = f(b"abcdefghX");
-//! assert_eq!(r, Ok((&b"X"[..], A{a: 1, b: 2})));
-//! # }
+//! ```rust,{source="doctests::example_11"},ignore
 //! ```
 //!
 //! ## Streaming / Complete
@@ -330,48 +162,7 @@
 //!
 //! Here is how it works in practice:
 //!
-//! ```rust
-//! use nom::{IResult, Err, Needed, error::{Error, ErrorKind}, bytes, character};
-//!
-//! fn take_streaming(i: &[u8]) -> IResult<&[u8], &[u8]> {
-//!   bytes::streaming::take(4u8)(i)
-//! }
-//!
-//! fn take_complete(i: &[u8]) -> IResult<&[u8], &[u8]> {
-//!   bytes::complete::take(4u8)(i)
-//! }
-//!
-//! // both parsers will take 4 bytes as expected
-//! assert_eq!(take_streaming(&b"abcde"[..]), Ok((&b"e"[..], &b"abcd"[..])));
-//! assert_eq!(take_complete(&b"abcde"[..]), Ok((&b"e"[..], &b"abcd"[..])));
-//!
-//! // if the input is smaller than 4 bytes, the streaming parser
-//! // will return `Incomplete` to indicate that we need more data
-//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::new(1))));
-//!
-//! // but the complete parser will return an error
-//! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error(Error::new(&b"abc"[..], ErrorKind::Eof))));
-//!
-//! // the alpha0 function recognizes 0 or more alphabetic characters
-//! fn alpha0_streaming(i: &str) -> IResult<&str, &str> {
-//!   character::streaming::alpha0(i)
-//! }
-//!
-//! fn alpha0_complete(i: &str) -> IResult<&str, &str> {
-//!   character::complete::alpha0(i)
-//! }
-//!
-//! // if there's a clear limit to the recognized characters, both parsers work the same way
-//! assert_eq!(alpha0_streaming("abcd;"), Ok((";", "abcd")));
-//! assert_eq!(alpha0_complete("abcd;"), Ok((";", "abcd")));
-//!
-//! // but when there's no limit, the streaming version returns `Incomplete`, because it cannot
-//! // know if more input data should be recognized. The whole input could be "abcd;", or
-//! // "abcde;"
-//! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::new(1))));
-//!
-//! // while the complete version knows that all of the data is there
-//! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
+//! ```rust,{source="examples_12"},ignore
 //! ```
 //! **Going further:** Read the [guides](https://github.com/rust-bakery/nom/tree/main/doc),
 //! check out the [recipes]!
@@ -458,3 +249,290 @@ pub mod number;
 #[cfg(all(feature = "std", any(doc, doctest, feature = "docsrs")))]
 #[cfg_attr(any(doc, doctest, feature = "docsrs"), doc = include_str!("../doc/nom_recipes.md"))]
 pub mod recipes {}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+
+  #[test]
+  fn example_1() {
+    use nom::{
+      bytes::complete::{tag, take_while_m_n},
+      combinator::map_res,
+      IResult, Parser,
+    };
+
+    #[derive(Debug, PartialEq)]
+    pub struct Color {
+      pub red: u8,
+      pub green: u8,
+      pub blue: u8,
+    }
+
+    fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
+      u8::from_str_radix(input, 16)
+    }
+
+    fn is_hex_digit(c: char) -> bool {
+      c.is_digit(16)
+    }
+
+    fn hex_primary(input: &str) -> IResult<&str, u8> {
+      map_res(take_while_m_n(2, 2, is_hex_digit), from_hex).parse(input)
+    }
+
+    fn hex_color(input: &str) -> IResult<&str, Color> {
+      let (input, _) = tag("#")(input)?;
+      let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
+
+      Ok((input, Color { red, green, blue }))
+    }
+
+    assert_eq!(
+      hex_color("#2F14DF"),
+      Ok((
+        "",
+        Color {
+          red: 47,
+          green: 20,
+          blue: 223,
+        }
+      ))
+    );
+  }
+
+  #[test]
+  fn example_2() {
+    use nom::{
+      bytes::complete::is_not,
+      // see the "streaming/complete" paragraph lower for an explanation of these submodules
+      character::complete::char,
+      sequence::delimited,
+      IResult,
+      Parser,
+    };
+
+    fn parens(input: &str) -> IResult<&str, &str> {
+      delimited(char('('), is_not(")"), char(')')).parse(input)
+    }
+  }
+
+  #[test]
+  fn example_3() {
+    use nom::{Err, IResult, Needed};
+
+    fn take4(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      if i.len() < 4 {
+        Err(Err::Incomplete(Needed::new(4)))
+      } else {
+        Ok((&i[4..], &i[0..4]))
+      }
+    }
+  }
+
+  #[test]
+  fn example_4() {
+    use nom::{bytes::streaming::take, IResult};
+    fn take4(input: &str) -> IResult<&str, &str> {
+      take(4u8)(input)
+    }
+  }
+
+  #[test]
+  fn example_5() {
+    use nom::{error::Error, Needed};
+
+    type IResult<I, O, E = Error<I>> = Result<(I, O), Err<E>>;
+
+    enum Err<E> {
+      Incomplete(Needed),
+      Error(E),
+      Failure(E),
+    }
+  }
+
+  #[test]
+  fn example_6() {
+    use nom::bytes::complete::{tag, take};
+    use nom::IResult;
+    fn abcd_parser(i: &str) -> IResult<&str, &str> {
+      tag("abcd")(i) // will consume bytes if the input begins with "abcd"
+    }
+
+    fn take_10(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      take(10u8)(i) // will consume and return 10 bytes of input
+    }
+  }
+
+  #[test]
+  fn example_7() {
+    use nom::branch::alt;
+    use nom::bytes::complete::tag;
+    use nom::{IResult, Parser};
+
+    let mut alt_tags = alt((tag("abcd"), tag("efgh")));
+
+    assert_eq!(
+      alt_tags.parse(&b"abcdxxx"[..]),
+      Ok((&b"xxx"[..], &b"abcd"[..]))
+    );
+    assert_eq!(
+      alt_tags.parse(&b"efghxxx"[..]),
+      Ok((&b"xxx"[..], &b"efgh"[..]))
+    );
+    assert_eq!(
+      alt_tags.parse(&b"ijklxxx"[..]),
+      Err(nom::Err::Error((
+        &b"ijklxxx"[..],
+        nom::error::ErrorKind::Tag
+      )))
+    );
+  }
+
+  #[test]
+  fn example_8() {
+    use nom::{bytes::complete::tag, combinator::opt, IResult, Parser};
+    fn abcd_opt(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
+      opt(tag("abcd")).parse(i)
+    }
+
+    assert_eq!(
+      abcd_opt(&b"abcdxxx"[..]),
+      Ok((&b"xxx"[..], Some(&b"abcd"[..])))
+    );
+    assert_eq!(abcd_opt(&b"efghxxx"[..]), Ok((&b"efghxxx"[..], None)));
+  }
+
+  #[cfg(feature = "alloc")]
+  #[test]
+  fn example_9() {
+    use nom::{bytes::complete::tag, multi::many0, IResult, Parser};
+    use std::str;
+
+    fn multi(i: &str) -> IResult<&str, Vec<&str>> {
+      many0(tag("abcd")).parse(i)
+    }
+
+    let a = "abcdef";
+    let b = "abcdabcdef";
+    let c = "azerty";
+    assert_eq!(multi(a), Ok(("ef", vec!["abcd"])));
+    assert_eq!(multi(b), Ok(("ef", vec!["abcd", "abcd"])));
+    assert_eq!(multi(c), Ok(("azerty", Vec::new())));
+  }
+
+  #[test]
+  fn example_10() {
+    use nom::{
+      bytes::streaming::{tag, take},
+      error::ErrorKind,
+      number::streaming::be_u16,
+      Needed, Parser,
+    };
+
+    let mut tpl = (be_u16, take(3u8), tag("fg"));
+
+    assert_eq!(
+      tpl.parse(&b"abcdefgh"[..]),
+      Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])))
+    );
+    assert_eq!(
+      tpl.parse(&b"abcde"[..]),
+      Err(nom::Err::Incomplete(Needed::new(2)))
+    );
+    let input = &b"abcdejk"[..];
+    assert_eq!(
+      tpl.parse(input),
+      Err(nom::Err::Error((&input[5..], ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_11() {
+    use nom::{bytes::complete::tag, IResult};
+
+    #[derive(Debug, PartialEq)]
+    struct A {
+      a: u8,
+      b: u8,
+    }
+
+    fn ret_int1(i: &[u8]) -> IResult<&[u8], u8> {
+      Ok((i, 1))
+    }
+    fn ret_int2(i: &[u8]) -> IResult<&[u8], u8> {
+      Ok((i, 2))
+    }
+
+    fn f(i: &[u8]) -> IResult<&[u8], A> {
+      // if successful, the parser returns `Ok((remaining_input, output_value))` that we can destructure
+      let (i, _) = tag("abcd")(i)?;
+      let (i, a) = ret_int1(i)?;
+      let (i, _) = tag("efgh")(i)?;
+      let (i, b) = ret_int2(i)?;
+
+      Ok((i, A { a, b }))
+    }
+
+    let r = f(b"abcdefghX");
+    assert_eq!(r, Ok((&b"X"[..], A { a: 1, b: 2 })));
+  }
+
+  #[test]
+  fn example_12() {
+    use nom::{
+      bytes, character,
+      error::{Error, ErrorKind},
+      Err, IResult, Needed,
+    };
+
+    fn take_streaming(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      bytes::streaming::take(4u8)(i)
+    }
+
+    fn take_complete(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      bytes::complete::take(4u8)(i)
+    }
+
+    // both parsers will take 4 bytes as expected
+    assert_eq!(take_streaming(&b"abcde"[..]), Ok((&b"e"[..], &b"abcd"[..])));
+    assert_eq!(take_complete(&b"abcde"[..]), Ok((&b"e"[..], &b"abcd"[..])));
+
+    // if the input is smaller than 4 bytes, the streaming parser
+    // will return `Incomplete` to indicate that we need more data
+    assert_eq!(
+      take_streaming(&b"abc"[..]),
+      Err(Err::Incomplete(Needed::new(1)))
+    );
+
+    // but the complete parser will return an error
+    assert_eq!(
+      take_complete(&b"abc"[..]),
+      Err(Err::Error(Error::new(&b"abc"[..], ErrorKind::Eof)))
+    );
+
+    // the alpha0 function recognizes 0 or more alphabetic characters
+    fn alpha0_streaming(i: &str) -> IResult<&str, &str> {
+      character::streaming::alpha0(i)
+    }
+
+    fn alpha0_complete(i: &str) -> IResult<&str, &str> {
+      character::complete::alpha0(i)
+    }
+
+    // if there's a clear limit to the recognized characters, both parsers work the same way
+    assert_eq!(alpha0_streaming("abcd;"), Ok((";", "abcd")));
+    assert_eq!(alpha0_complete("abcd;"), Ok((";", "abcd")));
+
+    // but when there's no limit, the streaming version returns `Incomplete`, because it cannot
+    // know if more input data should be recognized. The whole input could be "abcd;", or
+    // "abcde;"
+    assert_eq!(
+      alpha0_streaming("abcd"),
+      Err(Err::Incomplete(Needed::new(1)))
+    );
+
+    // while the complete version knows that all of the data is there
+    assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
+  }
+}

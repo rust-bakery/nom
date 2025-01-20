@@ -44,19 +44,7 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 /// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
 /// return an error, to prevent going into an infinite loop
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::many0;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   many0(tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
-/// assert_eq!(parser(""), Ok(("", vec![])));
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -131,19 +119,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::multi::many1;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   many1(tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_2"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -231,20 +207,7 @@ where
 ///
 /// `f` keeps going so long as `g` produces [`Err::Error`]. To instead chain an error up, see [`cut`][crate::combinator::cut].
 ///
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::multi::many_till;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, (Vec<&str>, &str)> {
-///   many_till(tag("abc"), tag("end")).parse(s)
-/// };
-///
-/// assert_eq!(parser("abcabcend"), Ok(("", (vec!["abc", "abc"], "end"))));
-/// assert_eq!(parser("abc123end"), Err(Err::Error(Error::new("123end", ErrorKind::Tag))));
-/// assert_eq!(parser("123123end"), Err(Err::Error(Error::new("123123end", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
-/// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
+/// ```rust,{source="doctests::example_3"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -338,20 +301,7 @@ where
 /// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::separated_list0;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   separated_list0(tag("|"), tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
-/// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
-/// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
-/// assert_eq!(parser(""), Ok(("", vec![])));
-/// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
+/// ```rust,{source="doctests::example_4"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -459,20 +409,7 @@ where
 /// # Arguments
 /// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::multi::separated_list1;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   separated_list1(tag("|"), tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
-/// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
-/// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
-/// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_5"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -575,20 +512,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::many_m_n;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   many_m_n(0, 2, tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
-/// assert_eq!(parser(""), Ok(("", vec![])));
-/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```rust,{source="doctests::example_6"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -685,19 +609,7 @@ where
 /// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
 /// return an error, to prevent going into an infinite loop
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::many0_count;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, usize> {
-///   many0_count(tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", 2)));
-/// assert_eq!(parser("abc123"), Ok(("123", 1)));
-/// assert_eq!(parser("123123"), Ok(("123123", 0)));
-/// assert_eq!(parser(""), Ok(("", 0)));
+/// ```rust,{source="doctests::example_7"},ignore
 /// ```
 pub fn many0_count<I, E, F>(parser: F) -> impl Parser<I, Output = usize, Error = E>
 where
@@ -766,19 +678,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::multi::many1_count;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, usize> {
-///   many1_count(tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", 2)));
-/// assert_eq!(parser("abc123"), Ok(("123", 1)));
-/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1Count))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1Count))));
+/// ```rust,{source="doctests::example_8"},ignore
 /// ```
 pub fn many1_count<I, E, F>(parser: F) -> impl Parser<I, Output = usize, Error = E>
 where
@@ -854,20 +754,7 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `count` How often to apply the parser.
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::multi::count;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   count(tag("abc"), 2).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Err(Err::Error(Error::new("123", ErrorKind::Tag))));
-/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
-/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```rust,{source="doctests::example_9"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -938,22 +825,7 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `buf` The slice to fill
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::multi::fill;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, [&str; 2]> {
-///   let mut buf = ["", ""];
-///   let (rest, ()) = fill(tag("abc"), &mut buf).parse(s)?;
-///   Ok((rest, buf))
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", ["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Err(Err::Error(Error::new("123", ErrorKind::Tag))));
-/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
-/// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
+/// ```rust,{source="doctests::example_10"},ignore
 /// ```
 pub fn fill<'a, I, E, F>(
   parser: F,
@@ -1020,26 +892,7 @@ where
 /// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
 /// return an error, to prevent going into an infinite loop
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::fold_many0;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   fold_many0(
-///     tag("abc"),
-///     Vec::new,
-///     |mut acc: Vec<_>, item| {
-///       acc.push(item);
-///       acc
-///     }
-///   ).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
-/// assert_eq!(parser(""), Ok(("", vec![])));
+/// ```rust,{source="doctests::example_11"},ignore
 /// ```
 pub fn fold_many0<I, E, F, G, H, R>(
   parser: F,
@@ -1124,26 +977,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::multi::fold_many1;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   fold_many1(
-///     tag("abc"),
-///     Vec::new,
-///     |mut acc: Vec<_>, item| {
-///       acc.push(item);
-///       acc
-///     }
-///   ).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
+/// ```rust,{source="doctests::example_12"},ignore
 /// ```
 pub fn fold_many1<I, E, F, G, H, R>(
   parser: F,
@@ -1241,29 +1075,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::fold_many_m_n;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   fold_many_m_n(
-///     0,
-///     2,
-///     tag("abc"),
-///     Vec::new,
-///     |mut acc: Vec<_>, item| {
-///       acc.push(item);
-///       acc
-///     }
-///   ).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
-/// assert_eq!(parser(""), Ok(("", vec![])));
-/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```rust,{source="doctests::example_13"},ignore
 /// ```
 pub fn fold_many_m_n<I, E, F, G, H, R>(
   min: usize,
@@ -1357,18 +1169,7 @@ where
 /// `length_data` will return an error.
 /// # Arguments
 /// * `f` The parser to apply.
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::number::complete::be_u16;
-/// use nom::multi::length_data;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   length_data(be_u16).parse(s)
-/// }
-///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
-/// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
+/// ```rust,{source="doctests::example_14"},ignore
 /// ```
 pub fn length_data<I, E, F>(f: F) -> impl Parser<I, Output = I, Error = E>
 where
@@ -1388,19 +1189,7 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `g` The parser to apply on the subslice.
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::number::complete::be_u16;
-/// use nom::multi::length_value;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   length_value(be_u16, tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
-/// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error(Error::new(&b"123"[..], ErrorKind::Tag))));
-/// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
+/// ```rust,{source="doctests::example_15"},ignore
 /// ```
 pub fn length_value<I, E, F, G>(
   f: F,
@@ -1476,22 +1265,7 @@ where
 /// # Arguments
 /// * `f` The parser to apply to obtain the count.
 /// * `g` The parser to apply repeatedly.
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
-/// use nom::number::complete::u8;
-/// use nom::multi::length_count;
-/// use nom::bytes::complete::tag;
-/// use nom::combinator::map;
-///
-/// fn parser(s: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-///   length_count(map(u8, |i| {
-///      println!("got number: {}", i);
-///      i
-///   }), tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
-/// assert_eq!(parser(b"\x03123123123"), Err(Err::Error(Error::new(&b"123123123"[..], ErrorKind::Tag))));
+/// ```rust,{source="doctests::example_16"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 pub fn length_count<I, E, F, G>(
@@ -1587,78 +1361,19 @@ where
 ///   * An empty range is invalid.
 /// * `parse` The parser to apply.
 ///
-/// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::many;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   many(0..=2, tag("abc")).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
-/// assert_eq!(parser(""), Ok(("", vec![])));
-/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```rust,{source="doctests::example_17"},ignore
 /// ```
 ///
 /// This is not limited to `Vec`, other collections like `HashMap`
 /// can be used:
 ///
-/// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::many;
-/// use nom::bytes::complete::{tag, take_while};
-/// use nom::sequence::{separated_pair, terminated};
-/// use nom::AsChar;
-///
-/// use std::collections::HashMap;
-///
-/// fn key_value(s: &str) -> IResult<&str, HashMap<&str, &str>> {
-///   many(0.., terminated(
-///     separated_pair(
-///       take_while(AsChar::is_alpha),
-///       tag("="),
-///       take_while(AsChar::is_alpha)
-///     ),
-///     tag(";")
-///   )).parse(s)
-/// }
-///
-/// assert_eq!(
-///   key_value("a=b;c=d;"),
-///   Ok(("", HashMap::from([("a", "b"), ("c", "d")])))
-/// );
+/// ```rust,{source="doctests::example_18"},ignore
 /// ```
 ///
 /// If more control is needed on the default value, [fold] can
 /// be used instead:
 ///
-/// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::fold;
-/// use nom::bytes::complete::tag;
-///
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   fold(
-///     0..=4,
-///     tag("abc"),
-///     // preallocates a vector of the max size
-///     || Vec::with_capacity(4),
-///     |mut acc: Vec<_>, item| {
-///       acc.push(item);
-///       acc
-///     }
-///   ).parse(s)
-/// }
-///
-///
-/// assert_eq!(parser("abcabcabcabc"), Ok(("", vec!["abc", "abc", "abc", "abc"])));
+/// ```rust,{source="doctests::example_19"},ignore
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -1760,29 +1475,7 @@ where
 /// * `init` A function returning the initial value.
 /// * `fold` The function that combines a result of `f` with
 ///       the current accumulator.
-/// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::fold;
-/// use nom::bytes::complete::tag;
-///
-/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   fold(
-///     0..=2,
-///     tag("abc"),
-///     Vec::new,
-///     |mut acc: Vec<_>, item| {
-///       acc.push(item);
-///       acc
-///     }
-///   ).parse(s)
-/// }
-///
-/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
-/// assert_eq!(parser(""), Ok(("", vec![])));
-/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```rust,{source="doctests::example_20"},ignore
 /// ```
 pub fn fold<I, E, F, G, H, J, R>(
   range: J,
@@ -1866,5 +1559,416 @@ where
     }
 
     Ok((input, acc))
+  }
+}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+  use nom::{
+    error::{Error, ErrorKind},
+    Err, IResult, Needed, Parser,
+  };
+
+  #[test]
+  fn example_1() {
+    use nom::bytes::complete::tag;
+    use nom::multi::many0;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      many0(tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(parser("123123"), Ok(("123123", vec![])));
+    assert_eq!(parser(""), Ok(("", vec![])));
+  }
+
+  #[test]
+  fn example_2() {
+    use nom::bytes::complete::tag;
+    use nom::multi::many1;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      many1(tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(
+      parser("123123"),
+      Err(Err::Error(Error::new("123123", ErrorKind::Tag)))
+    );
+    assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+  }
+
+  #[test]
+  fn example_3() {
+    use nom::bytes::complete::tag;
+    use nom::multi::many_till;
+
+    fn parser(s: &str) -> IResult<&str, (Vec<&str>, &str)> {
+      many_till(tag("abc"), tag("end")).parse(s)
+    };
+
+    assert_eq!(parser("abcabcend"), Ok(("", (vec!["abc", "abc"], "end"))));
+    assert_eq!(
+      parser("abc123end"),
+      Err(Err::Error(Error::new("123end", ErrorKind::Tag)))
+    );
+    assert_eq!(
+      parser("123123end"),
+      Err(Err::Error(Error::new("123123end", ErrorKind::Tag)))
+    );
+    assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+    assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
+  }
+
+  #[test]
+  fn example_4() {
+    use nom::bytes::complete::tag;
+    use nom::multi::separated_list0;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      separated_list0(tag("|"), tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+    assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
+    assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
+    assert_eq!(parser(""), Ok(("", vec![])));
+    assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
+  }
+
+  #[test]
+  fn example_5() {
+    use nom::bytes::complete::tag;
+    use nom::multi::separated_list1;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      separated_list1(tag("|"), tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+    assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
+    assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
+    assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+    assert_eq!(
+      parser("def|abc"),
+      Err(Err::Error(Error::new("def|abc", ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_6() {
+    use nom::bytes::complete::tag;
+    use nom::multi::many_m_n;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      many_m_n(0, 2, tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(parser("123123"), Ok(("123123", vec![])));
+    assert_eq!(parser(""), Ok(("", vec![])));
+    assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+  }
+
+  #[test]
+  fn example_7() {
+    use nom::bytes::complete::tag;
+    use nom::multi::many0_count;
+
+    fn parser(s: &str) -> IResult<&str, usize> {
+      many0_count(tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", 2)));
+    assert_eq!(parser("abc123"), Ok(("123", 1)));
+    assert_eq!(parser("123123"), Ok(("123123", 0)));
+    assert_eq!(parser(""), Ok(("", 0)));
+  }
+
+  #[test]
+  fn example_8() {
+    use nom::bytes::complete::tag;
+    use nom::multi::many1_count;
+
+    fn parser(s: &str) -> IResult<&str, usize> {
+      many1_count(tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", 2)));
+    assert_eq!(parser("abc123"), Ok(("123", 1)));
+    assert_eq!(
+      parser("123123"),
+      Err(Err::Error(Error::new("123123", ErrorKind::Many1Count)))
+    );
+    assert_eq!(
+      parser(""),
+      Err(Err::Error(Error::new("", ErrorKind::Many1Count)))
+    );
+  }
+
+  #[test]
+  fn example_9() {
+    use nom::bytes::complete::tag;
+    use nom::multi::count;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      count(tag("abc"), 2).parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(
+      parser("abc123"),
+      Err(Err::Error(Error::new("123", ErrorKind::Tag)))
+    );
+    assert_eq!(
+      parser("123123"),
+      Err(Err::Error(Error::new("123123", ErrorKind::Tag)))
+    );
+    assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+    assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+  }
+
+  #[test]
+  fn example_10() {
+    use nom::bytes::complete::tag;
+    use nom::multi::fill;
+
+    fn parser(s: &str) -> IResult<&str, [&str; 2]> {
+      let mut buf = ["", ""];
+      let (rest, ()) = fill(tag("abc"), &mut buf).parse(s)?;
+      Ok((rest, buf))
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", ["abc", "abc"])));
+    assert_eq!(
+      parser("abc123"),
+      Err(Err::Error(Error::new("123", ErrorKind::Tag)))
+    );
+    assert_eq!(
+      parser("123123"),
+      Err(Err::Error(Error::new("123123", ErrorKind::Tag)))
+    );
+    assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+    assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
+  }
+
+  #[test]
+  fn example_11() {
+    use nom::bytes::complete::tag;
+    use nom::multi::fold_many0;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      fold_many0(tag("abc"), Vec::new, |mut acc: Vec<_>, item| {
+        acc.push(item);
+        acc
+      })
+      .parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(parser("123123"), Ok(("123123", vec![])));
+    assert_eq!(parser(""), Ok(("", vec![])));
+  }
+
+  #[test]
+  fn example_12() {
+    use nom::bytes::complete::tag;
+    use nom::multi::fold_many1;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      fold_many1(tag("abc"), Vec::new, |mut acc: Vec<_>, item| {
+        acc.push(item);
+        acc
+      })
+      .parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(
+      parser("123123"),
+      Err(Err::Error(Error::new("123123", ErrorKind::Many1)))
+    );
+    assert_eq!(
+      parser(""),
+      Err(Err::Error(Error::new("", ErrorKind::Many1)))
+    );
+  }
+
+  #[test]
+  fn example_13() {
+    use nom::bytes::complete::tag;
+    use nom::multi::fold_many_m_n;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      fold_many_m_n(0, 2, tag("abc"), Vec::new, |mut acc: Vec<_>, item| {
+        acc.push(item);
+        acc
+      })
+      .parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(parser("123123"), Ok(("123123", vec![])));
+    assert_eq!(parser(""), Ok(("", vec![])));
+    assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+  }
+
+  #[test]
+  fn example_14() {
+    use nom::multi::length_data;
+    use nom::number::complete::be_u16;
+
+    fn parser(s: &[u8]) -> IResult<&[u8], &[u8]> {
+      length_data(be_u16).parse(s)
+    }
+
+    assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
+    assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
+  }
+
+  #[test]
+  fn example_15() {
+    use nom::bytes::complete::tag;
+    use nom::multi::length_value;
+    use nom::number::complete::be_u16;
+
+    fn parser(s: &[u8]) -> IResult<&[u8], &[u8]> {
+      length_value(be_u16, tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
+    assert_eq!(
+      parser(b"\x00\x03123123"),
+      Err(Err::Error(Error::new(&b"123"[..], ErrorKind::Tag)))
+    );
+    assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
+  }
+
+  #[test]
+  fn example_16() {
+    use nom::bytes::complete::tag;
+    use nom::combinator::map;
+    use nom::multi::length_count;
+    use nom::number::complete::u8;
+
+    fn parser(s: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+      length_count(
+        map(u8, |i| {
+          println!("got number: {}", i);
+          i
+        }),
+        tag("abc"),
+      )
+      .parse(s)
+    }
+
+    assert_eq!(
+      parser(&b"\x02abcabcabc"[..]),
+      Ok((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))
+    );
+    assert_eq!(
+      parser(b"\x03123123123"),
+      Err(Err::Error(Error::new(&b"123123123"[..], ErrorKind::Tag)))
+    );
+  }
+
+  #[test]
+  fn example_17() {
+    use nom::bytes::complete::tag;
+    use nom::multi::many;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      many(0..=2, tag("abc")).parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(parser("123123"), Ok(("123123", vec![])));
+    assert_eq!(parser(""), Ok(("", vec![])));
+    assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+  }
+
+  #[test]
+  fn example_18() {
+    use nom::bytes::complete::{tag, take_while};
+    use nom::multi::many;
+    use nom::sequence::{separated_pair, terminated};
+    use nom::AsChar;
+
+    use std::collections::HashMap;
+
+    fn key_value(s: &str) -> IResult<&str, HashMap<&str, &str>> {
+      many(
+        0..,
+        terminated(
+          separated_pair(
+            take_while(AsChar::is_alpha),
+            tag("="),
+            take_while(AsChar::is_alpha),
+          ),
+          tag(";"),
+        ),
+      )
+      .parse(s)
+    }
+
+    assert_eq!(
+      key_value("a=b;c=d;"),
+      Ok(("", HashMap::from([("a", "b"), ("c", "d")])))
+    );
+  }
+
+  #[test]
+  fn example_19() {
+    use nom::bytes::complete::tag;
+    use nom::multi::fold;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      fold(
+        0..=4,
+        tag("abc"),
+        // preallocates a vector of the max size
+        || Vec::with_capacity(4),
+        |mut acc: Vec<_>, item| {
+          acc.push(item);
+          acc
+        },
+      )
+      .parse(s)
+    }
+
+    assert_eq!(
+      parser("abcabcabcabc"),
+      Ok(("", vec!["abc", "abc", "abc", "abc"]))
+    );
+  }
+
+  #[test]
+  fn example_20() {
+    use nom::bytes::complete::tag;
+    use nom::multi::fold;
+
+    fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+      fold(0..=2, tag("abc"), Vec::new, |mut acc: Vec<_>, item| {
+        acc.push(item);
+        acc
+      })
+      .parse(s)
+    }
+
+    assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+    assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+    assert_eq!(parser("123123"), Ok(("123123", vec![])));
+    assert_eq!(parser(""), Ok(("", vec![])));
+    assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
   }
 }

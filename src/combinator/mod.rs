@@ -23,11 +23,7 @@ mod tests;
 
 /// Return the remaining input.
 ///
-/// ```rust
-/// # use nom::error::ErrorKind;
-/// use nom::combinator::rest;
-/// assert_eq!(rest::<_,(_, ErrorKind)>("abc"), Ok(("", "abc")));
-/// assert_eq!(rest::<_,(_, ErrorKind)>(""), Ok(("", "")));
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 #[inline]
 pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -39,11 +35,7 @@ where
 
 /// Return the length of the remaining input.
 ///
-/// ```rust
-/// # use nom::error::ErrorKind;
-/// use nom::combinator::rest_len;
-/// assert_eq!(rest_len::<_,(_, ErrorKind)>("abc"), Ok(("abc", 3)));
-/// assert_eq!(rest_len::<_,(_, ErrorKind)>(""), Ok(("", 0)));
+/// ```rust,{source="doctests::example_2"},ignore
 /// ```
 #[inline]
 pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
@@ -56,20 +48,7 @@ where
 
 /// Maps a function on the result of a parser.
 ///
-/// ```rust
-/// use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::character::complete::digit1;
-/// use nom::combinator::map;
-/// # fn main() {
-///
-/// let mut parser = map(digit1, |s: &str| s.len());
-///
-/// // the parser will count how many characters were returned by digit1
-/// assert_eq!(parser.parse("123456"), Ok(("", 6)));
-///
-/// // this will fail if digit1 fails
-/// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
-/// # }
+/// ```rust,{source="doctests::example_3"},ignore
 /// ```
 pub fn map<I, O, E: ParseError<I>, F, G>(parser: F, f: G) -> impl Parser<I, Output = O, Error = E>
 where
@@ -81,23 +60,7 @@ where
 
 /// Applies a function returning a `Result` over the result of a parser.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::character::complete::digit1;
-/// use nom::combinator::map_res;
-/// # fn main() {
-///
-/// let mut parse = map_res(digit1, |s: &str| s.parse::<u8>());
-///
-/// // the parser will convert the result of digit1 to a number
-/// assert_eq!(parse.parse("123"), Ok(("", 123)));
-///
-/// // this will fail if digit1 fails
-/// assert_eq!(parse.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
-///
-/// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
-/// assert_eq!(parse.parse("123456"), Err(Err::Error(("123456", ErrorKind::MapRes))));
-/// # }
+/// ```rust,{source="doctests::example_4"},ignore
 /// ```
 pub fn map_res<I: Clone, O, E: ParseError<I> + FromExternalError<I, E2>, E2, F, G>(
   parser: F,
@@ -112,23 +75,7 @@ where
 
 /// Applies a function returning an `Option` over the result of a parser.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::character::complete::digit1;
-/// use nom::combinator::map_opt;
-/// # fn main() {
-///
-/// let mut parse = map_opt(digit1, |s: &str| s.parse::<u8>().ok());
-///
-/// // the parser will convert the result of digit1 to a number
-/// assert_eq!(parse.parse("123"), Ok(("", 123)));
-///
-/// // this will fail if digit1 fails
-/// assert_eq!(parse.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
-///
-/// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
-/// assert_eq!(parse.parse("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
-/// # }
+/// ```rust,{source="doctests::example_5"},ignore
 /// ```
 pub fn map_opt<I: Clone, O, E: ParseError<I>, F, G>(
   parser: F,
@@ -143,19 +90,7 @@ where
 
 /// Applies a parser over the result of another one.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::character::complete::digit1;
-/// use nom::bytes::complete::take;
-/// use nom::combinator::map_parser;
-/// # fn main() {
-///
-/// let mut parse = map_parser(take(5u8), digit1);
-///
-/// assert_eq!(parse.parse("12345"), Ok(("", "12345")));
-/// assert_eq!(parse.parse("123ab"), Ok(("", "123")));
-/// assert_eq!(parse.parse("123"), Err(Err::Error(("123", ErrorKind::Eof))));
-/// # }
+/// ```rust,{source="doctests::example_6"},ignore
 /// ```
 pub fn map_parser<I, O, E: ParseError<I>, F, G>(
   parser: F,
@@ -170,18 +105,7 @@ where
 
 /// Creates a new parser from the output of the first parser, then apply that parser over the rest of the input.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::bytes::complete::take;
-/// use nom::number::complete::u8;
-/// use nom::combinator::flat_map;
-/// # fn main() {
-///
-/// let mut parse = flat_map(u8, take);
-///
-/// assert_eq!(parse.parse(&[2, 0, 1, 2][..]), Ok((&[2][..], &[0, 1][..])));
-/// assert_eq!(parse.parse(&[4, 0, 1, 2][..]), Err(Err::Error((&[0, 1, 2][..], ErrorKind::Eof))));
-/// # }
+/// ```rust,{source="doctests::example_7"},ignore
 /// ```
 pub fn flat_map<I, O, E: ParseError<I>, F, G, H>(
   parser: F,
@@ -199,19 +123,7 @@ where
 ///
 /// To chain an error up, see [`cut`].
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::opt;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// fn parser(i: &str) -> IResult<&str, Option<&str>> {
-///   opt(alpha1).parse(i)
-/// }
-///
-/// assert_eq!(parser("abcd;"), Ok((";", Some("abcd"))));
-/// assert_eq!(parser("123;"), Ok(("123;", None)));
-/// # }
+/// ```rust,{source="doctests::example_8"},ignore
 /// ```
 pub fn opt<I: Clone, E: ParseError<I>, F>(
   f: F,
@@ -252,21 +164,7 @@ where
 
 /// Calls the parser if the condition is met.
 ///
-/// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Parser};
-/// use nom::combinator::cond;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// fn parser(b: bool, i: &str) -> IResult<&str, Option<&str>> {
-///   cond(b, alpha1).parse(i)
-/// }
-///
-/// assert_eq!(parser(true, "abcd;"), Ok((";", Some("abcd"))));
-/// assert_eq!(parser(false, "abcd;"), Ok(("abcd;", None)));
-/// assert_eq!(parser(true, "123;"), Err(Err::Error(Error::new("123;", ErrorKind::Alpha))));
-/// assert_eq!(parser(false, "123;"), Ok(("123;", None)));
-/// # }
+/// ```rust,{source="doctests::example_9"},ignore
 /// ```
 pub fn cond<I, E: ParseError<I>, F>(
   b: bool,
@@ -304,17 +202,7 @@ where
 
 /// Tries to apply its parser without consuming the input.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::peek;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// let mut parser = peek(alpha1);
-///
-/// assert_eq!(parser.parse("abcd;"), Ok(("abcd;", "abcd")));
-/// assert_eq!(parser.parse("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
-/// # }
+/// ```rust,{source="doctests::example_10"},ignore
 /// ```
 pub fn peek<I: Clone, F>(
   parser: F,
@@ -352,16 +240,7 @@ where
 /// When we're at the end of the data, this combinator
 /// will succeed
 ///
-/// ```
-/// # use std::str;
-/// # use nom::{Err, error::ErrorKind, IResult};
-/// # use nom::combinator::eof;
-///
-/// # fn main() {
-/// let parser = eof;
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Eof))));
-/// assert_eq!(parser(""), Ok(("", "")));
-/// # }
+/// ```rust,{source="doctests::example_11"},ignore
 /// ```
 pub fn eof<I: Input + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
   if input.input_len() == 0 {
@@ -374,17 +253,7 @@ pub fn eof<I: Input + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
 
 /// Transforms Incomplete into `Error`.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::bytes::streaming::take;
-/// use nom::combinator::complete;
-/// # fn main() {
-///
-/// let mut parser = complete(take(5u8));
-///
-/// assert_eq!(parser.parse("abcdefg"), Ok(("fg", "abcde")));
-/// assert_eq!(parser.parse("abcd"), Err(Err::Error(("abcd", ErrorKind::Complete))));
-/// # }
+/// ```rust,{source="doctests::example_12"},ignore
 /// ```
 pub fn complete<I: Clone, O, E: ParseError<I>, F>(
   parser: F,
@@ -426,18 +295,7 @@ where
 
 /// Succeeds if all the input has been consumed by its child parser.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::all_consuming;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// let mut parser = all_consuming(alpha1);
-///
-/// assert_eq!(parser.parse("abcd"), Ok(("", "abcd")));
-/// assert_eq!(parser.parse("abcd;"),Err(Err::Error((";", ErrorKind::Eof))));
-/// assert_eq!(parser.parse("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
-/// # }
+/// ```rust,{source="doctests::example_13"},ignore
 /// ```
 pub fn all_consuming<I, E: ParseError<I>, F>(
   parser: F,
@@ -479,18 +337,7 @@ where
 /// The verification function takes as argument a reference to the output of the
 /// parser.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::verify;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// let mut parser = verify(alpha1, |s: &str| s.len() == 4);
-///
-/// assert_eq!(parser.parse("abcd"), Ok(("", "abcd")));
-/// assert_eq!(parser.parse("abcde"), Err(Err::Error(("abcde", ErrorKind::Verify))));
-/// assert_eq!(parser.parse("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
-/// # }
+/// ```rust,{source="doctests::example_14"},ignore
 /// ```
 pub fn verify<I: Clone, O2, E: ParseError<I>, F, G>(
   first: F,
@@ -545,17 +392,7 @@ where
 
 /// Returns the provided value if the child parser succeeds.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::value;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// let mut parser = value(1234, alpha1);
-///
-/// assert_eq!(parser.parse("abcd"), Ok(("", 1234)));
-/// assert_eq!(parser.parse("123abcd;"), Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
-/// # }
+/// ```rust,{source="doctests::example_15"},ignore
 /// ```
 pub fn value<I, O1: Clone, E: ParseError<I>, F>(
   val: O1,
@@ -569,17 +406,7 @@ where
 
 /// Succeeds if the child parser returns an error.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::not;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// let mut parser = not(alpha1);
-///
-/// assert_eq!(parser.parse("123"), Ok(("123", ())));
-/// assert_eq!(parser.parse("abcd"), Err(Err::Error(("abcd", ErrorKind::Not))));
-/// # }
+/// ```rust,{source="doctests::example_16"},ignore
 /// ```
 pub fn not<I: Clone, E: ParseError<I>, F>(parser: F) -> impl Parser<I, Output = (), Error = E>
 where
@@ -615,18 +442,7 @@ where
 
 /// If the child parser was successful, return the consumed input as produced value.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::recognize;
-/// use nom::character::complete::{char, alpha1};
-/// use nom::sequence::separated_pair;
-/// # fn main() {
-///
-/// let mut parser = recognize(separated_pair(alpha1, char(','), alpha1));
-///
-/// assert_eq!(parser.parse("abcd,efgh"), Ok(("", "abcd,efgh")));
-/// assert_eq!(parser.parse("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
-/// # }
+/// ```rust,{source="doctests::example_17"},ignore
 /// ```
 pub fn recognize<I: Clone + Offset + Input, E: ParseError<I>, F>(
   parser: F,
@@ -675,33 +491,7 @@ where
 ///
 /// Returned tuple is of the format `(consumed input, produced output)`.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::combinator::{consumed, value, recognize, map};
-/// use nom::character::complete::{char, alpha1};
-/// use nom::bytes::complete::tag;
-/// use nom::sequence::separated_pair;
-///
-/// fn inner_parser(input: &str) -> IResult<&str, bool> {
-///     value(true, tag("1234")).parse(input)
-/// }
-///
-/// # fn main() {
-///
-/// let mut consumed_parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
-///
-/// assert_eq!(consumed_parser.parse("abcd,efgh1"), Ok(("1", ("abcd,efgh", true))));
-/// assert_eq!(consumed_parser.parse("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
-///
-///
-/// // the first output (representing the consumed input)
-/// // should be the same as that of the `recognize` parser.
-/// let mut recognize_parser = recognize(inner_parser);
-/// let mut consumed_parser = map(consumed(inner_parser), |(consumed, output)| consumed);
-///
-/// assert_eq!(recognize_parser.parse("1234"), consumed_parser.parse("1234"));
-/// assert_eq!(recognize_parser.parse("abcd"), consumed_parser.parse("abcd"));
-/// # }
+/// ```rust,{source="doctests::example_18"},ignore
 /// ```
 pub fn consumed<I, F, E>(
   parser: F,
@@ -755,48 +545,11 @@ where
 /// # Example
 ///
 /// Without `cut`:
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// # use nom::character::complete::{one_of, digit1};
-/// # use nom::combinator::rest;
-/// # use nom::branch::alt;
-/// # use nom::sequence::preceded;
-/// # fn main() {
-///
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///   alt((
-///     preceded(one_of("+-"), digit1),
-///     rest
-///   )).parse(input)
-/// }
-///
-/// assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
-/// assert_eq!(parser("ab"), Ok(("", "ab")));
-/// assert_eq!(parser("+"), Ok(("", "+")));
-/// # }
+/// ```rust,{source="doctests::example_19"},ignore
 /// ```
 ///
 /// With `cut`:
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser, error::Error};
-/// # use nom::character::complete::{one_of, digit1};
-/// # use nom::combinator::rest;
-/// # use nom::branch::alt;
-/// # use nom::sequence::preceded;
-/// use nom::combinator::cut;
-/// # fn main() {
-///
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///   alt((
-///     preceded(one_of("+-"), cut(digit1)),
-///     rest
-///   )).parse(input)
-/// }
-///
-/// assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
-/// assert_eq!(parser("ab"), Ok(("", "ab")));
-/// assert_eq!(parser("+"), Err(Err::Failure(Error { input: "", code: ErrorKind::Digit })));
-/// # }
+/// ```rust,{source="doctests::example_20"},ignore
 /// ```
 pub fn cut<I, E: ParseError<I>, F>(
   parser: F,
@@ -839,22 +592,7 @@ where
 /// it will be able to convert the output value and the error value
 /// as long as the `Into` implementations are available
 ///
-/// ```rust
-/// # use nom::{IResult, Parser};
-/// use nom::combinator::into;
-/// use nom::character::complete::alpha1;
-/// # fn main() {
-///
-/// fn parser1(i: &str) -> IResult<&str, &str> {
-///   alpha1(i)
-/// }
-///
-/// let mut parser2 = into(parser1);
-///
-/// // the parser converts the &str output of the child parser into a Vec<u8>
-/// let bytes: IResult<&str, Vec<u8>> = parser2.parse("abcd");
-/// assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
-/// # }
+/// ```rust,{source="doctests::example_21"},ignore
 /// ```
 pub fn into<I, O1, O2, E1, E2, F>(parser: F) -> impl Parser<I, Output = O2, Error = E2>
 where
@@ -874,18 +612,7 @@ where
 ///
 /// On [`Err::Error`], iteration will stop. To instead chain an error up, see [`cut`].
 ///
-/// ```rust
-/// use nom::{combinator::iterator, IResult, bytes::complete::tag, character::complete::alpha1, sequence::terminated};
-/// use std::collections::HashMap;
-///
-/// let data = "abc|defg|hijkl|mnopqr|123";
-/// let mut it = iterator(data, terminated(alpha1, tag("|")));
-///
-/// let parsed = it.by_ref().map(|v| (v, v.len())).collect::<HashMap<_,_>>();
-/// let res: IResult<_,_> = it.finish();
-///
-/// assert_eq!(parsed, [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect());
-/// assert_eq!(res, Ok(("123", ())));
+/// ```rust,{source="doctests::example_22"},ignore
 /// ```
 pub fn iterator<Input, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
 where
@@ -965,21 +692,7 @@ enum State<E> {
 /// It can be used for example as the last alternative in `alt` to
 /// specify the default case.
 ///
-/// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, Parser};
-/// use nom::branch::alt;
-/// use nom::combinator::{success, value};
-/// use nom::character::complete::char;
-/// # fn main() {
-///
-/// let mut parser = success::<_,_,(_,ErrorKind)>(10);
-/// assert_eq!(parser.parse("xyz"), Ok(("xyz", 10)));
-///
-/// let mut sign = alt((value(-1, char('-')), value(1, char('+')), success::<_,_,(_,ErrorKind)>(1)));
-/// assert_eq!(sign.parse("+10"), Ok(("10", 1)));
-/// assert_eq!(sign.parse("-10"), Ok(("10", -1)));
-/// assert_eq!(sign.parse("10"), Ok(("10", 1)));
-/// # }
+/// ```rust,{source="doctests::example_23"},ignore
 /// ```
 pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Parser<I, Output = O, Error = E> {
   Success {
@@ -1009,12 +722,7 @@ where
 
 /// A parser which always fails.
 ///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, IResult, Parser};
-/// use nom::combinator::fail;
-///
-/// let s = "string";
-/// assert_eq!(fail::<_, &str, _>().parse(s), Err(Err::Error((s, ErrorKind::Fail))));
+/// ```rust,{source="doctests::example_24"},ignore
 /// ```
 pub fn fail<I, O, E: ParseError<I>>() -> impl Parser<I, Output = O, Error = E> {
   Fail {
@@ -1040,5 +748,406 @@ where
     Err(Err::Error(OM::Error::bind(|| {
       E::from_error_kind(input, ErrorKind::Fail)
     })))
+  }
+}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+  use nom::branch::alt;
+  use nom::character::complete::{digit1, one_of};
+  use nom::combinator::{eof, rest};
+  use nom::sequence::preceded;
+  use nom::{
+    error::{Error, ErrorKind},
+    Err, IResult, Parser,
+  };
+
+  #[test]
+  fn example_1() {
+    use nom::combinator::rest;
+    assert_eq!(rest::<_, (_, ErrorKind)>("abc"), Ok(("", "abc")));
+    assert_eq!(rest::<_, (_, ErrorKind)>(""), Ok(("", "")));
+  }
+
+  #[test]
+  fn example_2() {
+    use nom::combinator::rest_len;
+    assert_eq!(rest_len::<_, (_, ErrorKind)>("abc"), Ok(("abc", 3)));
+    assert_eq!(rest_len::<_, (_, ErrorKind)>(""), Ok(("", 0)));
+  }
+
+  #[test]
+  fn example_3() {
+    use nom::character::complete::digit1;
+    use nom::combinator::map;
+    use nom::{error::ErrorKind, Err, IResult, Parser};
+
+    let mut parser = map(digit1, |s: &str| s.len());
+
+    // the parser will count how many characters were returned by digit1
+    assert_eq!(parser.parse("123456"), Ok(("", 6)));
+
+    // this will fail if digit1 fails
+    assert_eq!(
+      parser.parse("abc"),
+      Err(Err::Error(("abc", ErrorKind::Digit)))
+    );
+  }
+
+  #[test]
+  fn example_4() {
+    use nom::character::complete::digit1;
+    use nom::combinator::map_res;
+
+    let mut parse = map_res(digit1, |s: &str| s.parse::<u8>());
+
+    // the parser will convert the result of digit1 to a number
+    assert_eq!(parse.parse("123"), Ok(("", 123)));
+
+    // this will fail if digit1 fails
+    assert_eq!(
+      parse.parse("abc"),
+      Err(Err::Error(("abc", ErrorKind::Digit)))
+    );
+
+    // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
+    assert_eq!(
+      parse.parse("123456"),
+      Err(Err::Error(("123456", ErrorKind::MapRes)))
+    );
+  }
+
+  #[test]
+  fn example_5() {
+    use nom::character::complete::digit1;
+    use nom::combinator::map_opt;
+
+    let mut parse = map_opt(digit1, |s: &str| s.parse::<u8>().ok());
+
+    // the parser will convert the result of digit1 to a number
+    assert_eq!(parse.parse("123"), Ok(("", 123)));
+
+    // this will fail if digit1 fails
+    assert_eq!(
+      parse.parse("abc"),
+      Err(Err::Error(("abc", ErrorKind::Digit)))
+    );
+
+    // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
+    assert_eq!(
+      parse.parse("123456"),
+      Err(Err::Error(("123456", ErrorKind::MapOpt)))
+    );
+  }
+
+  #[test]
+  fn example_6() {
+    use nom::bytes::complete::take;
+    use nom::character::complete::digit1;
+    use nom::combinator::map_parser;
+
+    let mut parse = map_parser(take(5u8), digit1);
+
+    assert_eq!(parse.parse("12345"), Ok(("", "12345")));
+    assert_eq!(parse.parse("123ab"), Ok(("", "123")));
+    assert_eq!(parse.parse("123"), Err(Err::Error(("123", ErrorKind::Eof))));
+  }
+
+  #[test]
+  fn example_7() {
+    use nom::bytes::complete::take;
+    use nom::combinator::flat_map;
+    use nom::number::complete::u8;
+
+    let mut parse = flat_map(u8, take);
+
+    assert_eq!(parse.parse(&[2, 0, 1, 2][..]), Ok((&[2][..], &[0, 1][..])));
+    assert_eq!(
+      parse.parse(&[4, 0, 1, 2][..]),
+      Err(Err::Error((&[0, 1, 2][..], ErrorKind::Eof)))
+    );
+  }
+
+  #[test]
+  fn example_8() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::opt;
+
+    fn parser(i: &str) -> IResult<&str, Option<&str>> {
+      opt(alpha1).parse(i)
+    }
+
+    assert_eq!(parser("abcd;"), Ok((";", Some("abcd"))));
+    assert_eq!(parser("123;"), Ok(("123;", None)));
+  }
+
+  #[test]
+  fn example_9() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::cond;
+
+    fn parser(b: bool, i: &str) -> IResult<&str, Option<&str>> {
+      cond(b, alpha1).parse(i)
+    }
+
+    assert_eq!(parser(true, "abcd;"), Ok((";", Some("abcd"))));
+    assert_eq!(parser(false, "abcd;"), Ok(("abcd;", None)));
+    assert_eq!(
+      parser(true, "123;"),
+      Err(Err::Error(Error::new("123;", ErrorKind::Alpha)))
+    );
+    assert_eq!(parser(false, "123;"), Ok(("123;", None)));
+  }
+
+  #[test]
+  fn example_10() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::peek;
+
+    let mut parser = peek(alpha1);
+
+    assert_eq!(parser.parse("abcd;"), Ok(("abcd;", "abcd")));
+    assert_eq!(
+      parser.parse("123;"),
+      Err(Err::Error(("123;", ErrorKind::Alpha)))
+    );
+  }
+
+  #[test]
+  fn example_11() {
+    let parser = eof;
+    assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Eof))));
+    assert_eq!(parser(""), Ok(("", "")));
+  }
+
+  #[test]
+  fn example_12() {
+    use nom::bytes::streaming::take;
+    use nom::combinator::complete;
+
+    let mut parser = complete(take(5u8));
+
+    assert_eq!(parser.parse("abcdefg"), Ok(("fg", "abcde")));
+    assert_eq!(
+      parser.parse("abcd"),
+      Err(Err::Error(("abcd", ErrorKind::Complete)))
+    );
+  }
+
+  #[test]
+  fn example_13() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::all_consuming;
+
+    let mut parser = all_consuming(alpha1);
+
+    assert_eq!(parser.parse("abcd"), Ok(("", "abcd")));
+    assert_eq!(
+      parser.parse("abcd;"),
+      Err(Err::Error((";", ErrorKind::Eof)))
+    );
+    assert_eq!(
+      parser.parse("123abcd;"),
+      Err(Err::Error(("123abcd;", ErrorKind::Alpha)))
+    );
+  }
+
+  #[test]
+  fn example_14() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::verify;
+
+    let mut parser = verify(alpha1, |s: &str| s.len() == 4);
+
+    assert_eq!(parser.parse("abcd"), Ok(("", "abcd")));
+    assert_eq!(
+      parser.parse("abcde"),
+      Err(Err::Error(("abcde", ErrorKind::Verify)))
+    );
+    assert_eq!(
+      parser.parse("123abcd;"),
+      Err(Err::Error(("123abcd;", ErrorKind::Alpha)))
+    );
+  }
+
+  #[test]
+  fn example_15() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::value;
+
+    let mut parser = value(1234, alpha1);
+
+    assert_eq!(parser.parse("abcd"), Ok(("", 1234)));
+    assert_eq!(
+      parser.parse("123abcd;"),
+      Err(Err::Error(("123abcd;", ErrorKind::Alpha)))
+    );
+  }
+
+  #[test]
+  fn example_16() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::not;
+
+    let mut parser = not(alpha1);
+
+    assert_eq!(parser.parse("123"), Ok(("123", ())));
+    assert_eq!(
+      parser.parse("abcd"),
+      Err(Err::Error(("abcd", ErrorKind::Not)))
+    );
+  }
+
+  #[test]
+  fn example_17() {
+    use nom::character::complete::{alpha1, char};
+    use nom::combinator::recognize;
+    use nom::sequence::separated_pair;
+
+    let mut parser = recognize(separated_pair(alpha1, char(','), alpha1));
+
+    assert_eq!(parser.parse("abcd,efgh"), Ok(("", "abcd,efgh")));
+    assert_eq!(
+      parser.parse("abcd;"),
+      Err(Err::Error((";", ErrorKind::Char)))
+    );
+  }
+
+  #[test]
+  fn example_18() {
+    use nom::bytes::complete::tag;
+    use nom::character::complete::{alpha1, char};
+    use nom::combinator::{consumed, map, recognize, value};
+    use nom::sequence::separated_pair;
+
+    fn inner_parser(input: &str) -> IResult<&str, bool> {
+      value(true, tag("1234")).parse(input)
+    }
+
+    let mut consumed_parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
+
+    assert_eq!(
+      consumed_parser.parse("abcd,efgh1"),
+      Ok(("1", ("abcd,efgh", true)))
+    );
+    assert_eq!(
+      consumed_parser.parse("abcd;"),
+      Err(Err::Error((";", ErrorKind::Char)))
+    );
+
+    // the first output (representing the consumed input)
+    // should be the same as that of the `recognize` parser.
+    let mut recognize_parser = recognize(inner_parser);
+    let mut consumed_parser = map(consumed(inner_parser), |(consumed, output)| consumed);
+
+    assert_eq!(
+      recognize_parser.parse("1234"),
+      consumed_parser.parse("1234")
+    );
+    assert_eq!(
+      recognize_parser.parse("abcd"),
+      consumed_parser.parse("abcd")
+    );
+  }
+
+  #[test]
+  fn example_19() {
+    fn parser(input: &str) -> IResult<&str, &str> {
+      alt((preceded(one_of("+-"), digit1), rest)).parse(input)
+    }
+
+    assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
+    assert_eq!(parser("ab"), Ok(("", "ab")));
+    assert_eq!(parser("+"), Ok(("", "+")));
+  }
+
+  #[test]
+  fn example_20() {
+    use nom::combinator::cut;
+
+    fn parser(input: &str) -> IResult<&str, &str> {
+      alt((preceded(one_of("+-"), cut(digit1)), rest)).parse(input)
+    }
+
+    assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
+    assert_eq!(parser("ab"), Ok(("", "ab")));
+    assert_eq!(
+      parser("+"),
+      Err(Err::Failure(Error {
+        input: "",
+        code: ErrorKind::Digit
+      }))
+    );
+  }
+
+  #[test]
+  fn example_21() {
+    use nom::character::complete::alpha1;
+    use nom::combinator::into;
+
+    fn parser1(i: &str) -> IResult<&str, &str> {
+      alpha1(i)
+    }
+
+    let mut parser2 = into(parser1);
+
+    // the parser converts the &str output of the child parser into a Vec<u8>
+    let bytes: IResult<&str, Vec<u8>> = parser2.parse("abcd");
+    assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
+  }
+
+  #[test]
+  fn example_22() {
+    use nom::{
+      bytes::complete::tag, character::complete::alpha1, combinator::iterator,
+      sequence::terminated, IResult,
+    };
+    use std::collections::HashMap;
+
+    let data = "abc|defg|hijkl|mnopqr|123";
+    let mut it = iterator(data, terminated(alpha1, tag("|")));
+
+    let parsed = it.by_ref().map(|v| (v, v.len())).collect::<HashMap<_, _>>();
+    let res: IResult<_, _> = it.finish();
+
+    assert_eq!(
+      parsed,
+      [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)]
+        .iter()
+        .cloned()
+        .collect()
+    );
+    assert_eq!(res, Ok(("123", ())));
+  }
+
+  #[test]
+  fn example_23() {
+    use nom::branch::alt;
+    use nom::character::complete::char;
+    use nom::combinator::{success, value};
+
+    let mut parser = success::<_, _, (_, ErrorKind)>(10);
+    assert_eq!(parser.parse("xyz"), Ok(("xyz", 10)));
+
+    let mut sign = alt((
+      value(-1, char('-')),
+      value(1, char('+')),
+      success::<_, _, (_, ErrorKind)>(1),
+    ));
+    assert_eq!(sign.parse("+10"), Ok(("10", 1)));
+    assert_eq!(sign.parse("-10"), Ok(("10", -1)));
+    assert_eq!(sign.parse("10"), Ok(("10", 1)));
+  }
+
+  #[test]
+  fn example_24() {
+    use nom::combinator::fail;
+
+    let s = "string";
+    assert_eq!(
+      fail::<_, &str, _>().parse(s),
+      Err(Err::Error((s, ErrorKind::Fail)))
+    );
   }
 }

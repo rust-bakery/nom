@@ -9,26 +9,7 @@ use crate::traits::{Input, ToUsize};
 /// Generates a parser taking `count` bits
 ///
 /// # Example
-/// ```rust
-/// # use nom::bits::complete::take;
-/// # use nom::IResult;
-/// # use nom::error::{Error, ErrorKind};
-/// // Input is a tuple of (input: I, bit_offset: usize)
-/// fn parser(input: (&[u8], usize), count: usize)-> IResult<(&[u8], usize), u8> {
-///  take(count)(input)
-/// }
-///
-/// // Consumes 0 bits, returns 0
-/// assert_eq!(parser(([0b00010010].as_ref(), 0), 0), Ok((([0b00010010].as_ref(), 0), 0)));
-///
-/// // Consumes 4 bits, returns their values and increase offset to 4
-/// assert_eq!(parser(([0b00010010].as_ref(), 0), 4), Ok((([0b00010010].as_ref(), 4), 0b00000001)));
-///
-/// // Consumes 4 bits, offset is 4, returns their values and increase offset to 0 of next byte
-/// assert_eq!(parser(([0b00010010].as_ref(), 4), 4), Ok((([].as_ref(), 0), 0b00000010)));
-///
-/// // Tries to consume 12 bits but only 8 are available
-/// assert_eq!(parser(([0b00010010].as_ref(), 0), 12), Err(nom::Err::Error(Error{input: ([0b00010010].as_ref(), 0), code: ErrorKind::Eof })));
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 pub fn take<I, O, C, E: ParseError<(I, usize)>>(
   count: C,
@@ -106,17 +87,7 @@ where
 /// Parses one specific bit as a bool.
 ///
 /// # Example
-/// ```rust
-/// # use nom::bits::complete::bool;
-/// # use nom::IResult;
-/// # use nom::error::{Error, ErrorKind};
-///
-/// fn parse(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
-///     bool(input)
-/// }
-///
-/// assert_eq!(parse(([0b10000000].as_ref(), 0)), Ok((([0b10000000].as_ref(), 1), true)));
-/// assert_eq!(parse(([0b10000000].as_ref(), 1)), Ok((([0b10000000].as_ref(), 2), false)));
+/// ```rust,{source="doctests::example_2"},ignore
 /// ```
 pub fn bool<I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
 where
@@ -190,6 +161,65 @@ mod test {
         input: (input, 8),
         code: ErrorKind::Eof
       }))
+    );
+  }
+}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+  use nom::bits::complete::{bool, take};
+  use nom::error::{Error, ErrorKind};
+  use nom::IResult;
+
+  #[test]
+  fn example() {
+    // Input is a tuple of (input: I, bit_offset: usize)
+    fn parser(input: (&[u8], usize), count: usize) -> IResult<(&[u8], usize), u8> {
+      take(count)(input)
+    }
+
+    // Consumes 0 bits, returns 0
+    assert_eq!(
+      parser(([0b00010010].as_ref(), 0), 0),
+      Ok((([0b00010010].as_ref(), 0), 0))
+    );
+
+    // Consumes 4 bits, returns their values and increase offset to 4
+    assert_eq!(
+      parser(([0b00010010].as_ref(), 0), 4),
+      Ok((([0b00010010].as_ref(), 4), 0b00000001))
+    );
+
+    // Consumes 4 bits, offset is 4, returns their values and increase offset to 0 of next byte
+    assert_eq!(
+      parser(([0b00010010].as_ref(), 4), 4),
+      Ok((([].as_ref(), 0), 0b00000010))
+    );
+
+    // Tries to consume 12 bits but only 8 are available
+    assert_eq!(
+      parser(([0b00010010].as_ref(), 0), 12),
+      Err(nom::Err::Error(Error {
+        input: ([0b00010010].as_ref(), 0),
+        code: ErrorKind::Eof
+      }))
+    );
+  }
+
+  #[test]
+  fn example_2() {
+    fn parse(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
+      bool(input)
+    }
+
+    assert_eq!(
+      parse(([0b10000000].as_ref(), 0)),
+      Ok((([0b10000000].as_ref(), 1), true))
+    );
+    assert_eq!(
+      parse(([0b10000000].as_ref(), 1)),
+      Ok((([0b10000000].as_ref(), 2), false))
     );
   }
 }

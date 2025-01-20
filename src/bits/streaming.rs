@@ -82,17 +82,7 @@ where
 /// Parses one specific bit as a bool.
 ///
 /// # Example
-/// ```rust
-/// # use nom::bits::complete::bool;
-/// # use nom::IResult;
-/// # use nom::error::{Error, ErrorKind};
-///
-/// fn parse(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
-///     bool(input)
-/// }
-///
-/// assert_eq!(parse(([0b10000000].as_ref(), 0)), Ok((([0b10000000].as_ref(), 1), true)));
-/// assert_eq!(parse(([0b10000000].as_ref(), 1)), Ok((([0b10000000].as_ref(), 2), false)));
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 pub fn bool<I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
 where
@@ -166,5 +156,28 @@ mod test {
     let result: crate::IResult<(&[u8], usize), bool> = bool((input, 8));
 
     assert_eq!(result, Err(crate::Err::Incomplete(Needed::new(1))));
+  }
+}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+  use nom::bits::complete::bool;
+  use nom::IResult;
+
+  #[test]
+  fn example_1() {
+    fn parse(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
+      bool(input)
+    }
+
+    assert_eq!(
+      parse(([0b10000000].as_ref(), 0)),
+      Ok((([0b10000000].as_ref(), 1), true))
+    );
+    assert_eq!(
+      parse(([0b10000000].as_ref(), 1)),
+      Ok((([0b10000000].as_ref(), 2), false))
+    );
   }
 }

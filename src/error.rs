@@ -473,19 +473,7 @@ macro_rules! error_node_position(
 ///
 /// It also displays the input in hexdump format
 ///
-/// ```rust
-/// use nom::{IResult, error::dbg_dmp, bytes::complete::tag};
-///
-/// fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-///   dbg_dmp(tag("abcd"), "tag")(i)
-/// }
-///
-///   let a = &b"efghijkl"[..];
-///
-/// // Will print the following message:
-/// // Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by ' tag ! ( "abcd" ) '
-/// // 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
-/// f(a);
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 #[cfg(feature = "std")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
@@ -800,3 +788,24 @@ pub fn print_offsets(input: &[u8], from: usize, offsets: &[(ErrorKind, usize, us
   String::from_utf8_lossy(&v[..]).into_owned()
 }
 */
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+
+  #[test]
+  fn example_1() {
+    use nom::{bytes::complete::tag, error::dbg_dmp, IResult};
+
+    fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      dbg_dmp(tag("abcd"), "tag")(i)
+    }
+
+    let a = &b"efghijkl"[..];
+
+    // Will print the following message:
+    // Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by ' tag ! ( "abcd" ) '
+    // 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
+    f(a);
+  }
+}

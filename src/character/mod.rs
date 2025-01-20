@@ -48,12 +48,7 @@ pub fn is_oct_digit(chr: u8) -> bool {
 ///
 /// # Example
 ///
-/// ```
-/// # use nom::character::is_bin_digit;
-/// assert_eq!(is_bin_digit(b'a'), false);
-/// assert_eq!(is_bin_digit(b'2'), false);
-/// assert_eq!(is_bin_digit(b'0'), true);
-/// assert_eq!(is_bin_digit(b'1'), true);
+/// ```rust,{source="doctests::example_1"},ignore
 /// ```
 #[inline]
 pub fn is_bin_digit(chr: u8) -> bool {
@@ -85,15 +80,7 @@ pub fn is_newline(chr: u8) -> bool {
 ///
 /// # Example
 ///
-/// ```
-/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
-/// # use nom::character::streaming::char;
-/// fn parser(i: &str) -> IResult<&str, char> {
-///     char('a')(i)
-/// }
-/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
-/// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
-/// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```rust,{source="doctests::example_2"},ignore
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Parser<I, Output = char, Error = Error>
 where
@@ -142,15 +129,7 @@ where
 ///
 /// # Example
 ///
-/// ```
-/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
-/// # use nom::character::complete::satisfy;
-/// fn parser(i: &str) -> IResult<&str, char> {
-///     satisfy(|c| c == 'a' || c == 'b')(i)
-/// }
-/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
-/// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
+/// ```rust,{source="doctests::example_3"},ignore
 /// ```
 pub fn satisfy<F, I, Error: ParseError<I>>(
   predicate: F,
@@ -209,12 +188,7 @@ where
 ///
 /// # Example
 ///
-/// ```
-/// # use nom::{Err, error::ErrorKind};
-/// # use nom::character::complete::one_of;
-/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
-/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
-/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
+/// ```rust,{source="doctests::example_4"},ignore
 /// ```
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
 where
@@ -232,12 +206,7 @@ where
 ///
 /// # Example
 ///
-/// ```
-/// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::character::streaming::none_of;
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
+/// ```rust,{source="doctests::example_5"},ignore
 /// ```
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
 where
@@ -256,14 +225,7 @@ where
 ///
 /// # Example
 ///
-/// ```
-/// # use nom::{character::complete::anychar, Err, error::{Error, ErrorKind}, IResult};
-/// fn parser(input: &str) -> IResult<&str, char> {
-///     anychar(input)
-/// }
-///
-/// assert_eq!(parser("abc"), Ok(("bc",'a')));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
+/// ```rust,{source="doctests::example_6"},ignore
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
@@ -315,12 +277,7 @@ where
 /// or if no terminating token is found (a non digit character).
 /// # Example
 ///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::streaming::digit1;
-/// assert_eq!(digit1::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
-/// assert_eq!(digit1::<_, (_, ErrorKind)>("c1"), Err(Err::Error(("c1", ErrorKind::Digit))));
-/// assert_eq!(digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```rust,{source="doctests::example_7"},ignore
 /// ```
 pub fn digit1<T, E: ParseError<T>>() -> impl Parser<T, Output = T, Error = E>
 where
@@ -358,12 +315,7 @@ where
 /// or if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::streaming::multispace0;
-/// assert_eq!(multispace0::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
-/// assert_eq!(multispace0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
-/// assert_eq!(multispace0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```rust,{source="doctests::example_8"},ignore
 /// ```
 pub fn multispace0<T, E: ParseError<T>>() -> impl Parser<T, Output = T, Error = E>
 where
@@ -398,5 +350,118 @@ where
       let c = item.as_char();
       !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
     })
+  }
+}
+
+#[cfg(any(doc, test))]
+mod doctests {
+  use crate as nom;
+  use nom::character::complete::{anychar, one_of, satisfy};
+  use nom::character::is_bin_digit;
+  use nom::character::streaming::*;
+  use nom::{
+    error::{Error, ErrorKind},
+    Err, IResult, Needed,
+  };
+
+  #[test]
+  fn example_1() {
+    assert_eq!(is_bin_digit(b'a'), false);
+    assert_eq!(is_bin_digit(b'2'), false);
+    assert_eq!(is_bin_digit(b'0'), true);
+    assert_eq!(is_bin_digit(b'1'), true);
+  }
+
+  #[test]
+  fn example_2() {
+    fn parser(i: &str) -> IResult<&str, char> {
+      char('a')(i)
+    }
+
+    assert_eq!(parser("abc"), Ok(("bc", 'a')));
+    assert_eq!(
+      parser("bc"),
+      Err(Err::Error(Error::new("bc", ErrorKind::Char)))
+    );
+    assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
+  }
+
+  #[test]
+  fn example_3() {
+    fn parser(i: &str) -> IResult<&str, char> {
+      satisfy(|c| c == 'a' || c == 'b')(i)
+    }
+
+    assert_eq!(parser("abc"), Ok(("bc", 'a')));
+    assert_eq!(
+      parser("cd"),
+      Err(Err::Error(Error::new("cd", ErrorKind::Satisfy)))
+    );
+    assert_eq!(
+      parser(""),
+      Err(Err::Error(Error::new("", ErrorKind::Satisfy)))
+    );
+  }
+
+  #[test]
+  fn example_4() {
+    assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
+    assert_eq!(
+      one_of::<_, _, (&str, ErrorKind)>("a")("bc"),
+      Err(Err::Error(("bc", ErrorKind::OneOf)))
+    );
+    assert_eq!(
+      one_of::<_, _, (&str, ErrorKind)>("a")(""),
+      Err(Err::Error(("", ErrorKind::OneOf)))
+    );
+  }
+
+  #[test]
+  fn example_5() {
+    assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
+    assert_eq!(
+      none_of::<_, _, (_, ErrorKind)>("ab")("a"),
+      Err(Err::Error(("a", ErrorKind::NoneOf)))
+    );
+    assert_eq!(
+      none_of::<_, _, (_, ErrorKind)>("a")(""),
+      Err(Err::Incomplete(Needed::Unknown))
+    );
+  }
+
+  #[test]
+  fn example_6() {
+    fn parser(input: &str) -> IResult<&str, char> {
+      anychar(input)
+    }
+
+    assert_eq!(parser("abc"), Ok(("bc", 'a')));
+    assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
+  }
+
+  #[test]
+  fn example_7() {
+    assert_eq!(digit1::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
+    assert_eq!(
+      digit1::<_, (_, ErrorKind)>("c1"),
+      Err(Err::Error(("c1", ErrorKind::Digit)))
+    );
+    assert_eq!(
+      digit1::<_, (_, ErrorKind)>(""),
+      Err(Err::Incomplete(Needed::new(1)))
+    );
+  }
+
+  #[test]
+  fn example_8() {
+    assert_eq!(
+      multispace0::<_, (_, ErrorKind)>(" \t\n\r21c"),
+      Ok(("21c", " \t\n\r"))
+    );
+    assert_eq!(multispace0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
+    assert_eq!(
+      multispace0::<_, (_, ErrorKind)>(""),
+      Err(Err::Incomplete(Needed::new(1)))
+    );
   }
 }
