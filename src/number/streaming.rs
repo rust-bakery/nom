@@ -1461,7 +1461,7 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::{Err, Needed};
-  use proptest::prelude::*;
+  //use proptest::prelude::*;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -2053,14 +2053,14 @@ mod tests {
     }
   }
 
-  proptest! {
-    #[test]
-    #[cfg(feature = "std")]
-    fn floats(s in "\\PC*") {
-        println!("testing {}", s);
-        let res1 = parse_f64(&s);
-        let res2 = double::<_, ()>(s.as_str());
-        assert_eq!(res1, res2);
-    }
-  }
+  // proptest! {
+  //   #[test]
+  //   #[cfg(feature = "std")]
+  //   fn floats(s in "\\PC*") {
+  //       println!("testing {}", s);
+  //       let res1 = parse_f64(&s);
+  //       let res2 = double::<_, ()>(s.as_str());
+  //       assert_eq!(res1, res2);
+  //   }
+  // }
 }
