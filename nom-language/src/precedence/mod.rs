@@ -370,13 +370,13 @@ where
 
 /// Applies a parser multiple times separated by another parser.
 ///
-/// It is similar to [`separated_list1`][crate::multi::separated_list1] but instead of collecting
+/// It is similar to [`separated_list1`][nom::multi::separated_list1] but instead of collecting
 /// into a vector, you have a callback to build the output.
 ///
 /// In a LALR grammar a left recursive operator is usually built with a rule syntax such as:
 ///  * A := A op B | B
 ///
-/// If you try to parse that wth [`alt`][crate::branch::alt] it will fail with a stack overflow
+/// If you try to parse that wth [`alt`][nom::branch::alt] it will fail with a stack overflow
 /// because the recusion is unlimited. This function solves this problem by converting the recusion
 /// into an iteration.
 ///
@@ -387,8 +387,8 @@ where
 ///
 ///  That can be written in `nom` trivially.
 ///
-/// This stops when either parser returns [`err::error`]  and returns the last built value. to instead chain an error up, see
-/// [`cut`][crate::combinator::cut].
+/// This stops when either parser returns an error and returns the last built value. to instead chain an error up, see
+/// [`cut`][nom::combinator::cut].
 ///
 /// # Arguments
 /// * `child` The parser to apply.
@@ -442,7 +442,7 @@ where
   }
 }
 
-/// Parser implementation for the [separated_list1] combinator
+/// Parser implementation for the [`separated_list1`][nom::multi::separated_list1] combinator
 pub struct LeftAssoc<F, G, B> {
   child: F,
   operator: G,
