@@ -214,7 +214,7 @@ Some benchmarks are available on [GitHub](https://github.com/rust-bakery/parser_
 
 ## Rust version requirements (MSRV)
 
-The 7.0 series of nom supports **Rustc version 1.56 or greater**.
+The 8.0 series of nom supports **Rustc version 1.56 or greater**.
 
 The current policy is that this will only be updated in the next major nom release.
 
@@ -224,7 +224,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "7"
+nom = "8"
 ```
 
 There are a few compilation features:
@@ -236,7 +236,7 @@ You can configure those features like this:
 
 ```toml
 [dependencies.nom]
-version = "7"
+version = "8"
 default-features = false
 features = ["alloc"]
 ```
