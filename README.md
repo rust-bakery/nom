@@ -214,7 +214,7 @@ Some benchmarks are available on [GitHub](https://github.com/rust-bakery/parser_
 
 ## Rust version requirements (MSRV)
 
-The 8.0 series of nom supports **Rustc version 1.56 or greater**.
+The 8.0 series of nom supports **Rustc version 1.65 or greater**.
 
 The current policy is that this will only be updated in the next major nom release.
 
