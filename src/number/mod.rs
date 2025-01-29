@@ -3,6 +3,7 @@
 use core::{
   marker::PhantomData,
   ops::{Add, Shl},
+  str::FromStr,
 };
 
 use crate::{
@@ -1350,7 +1351,7 @@ where
 pub fn float<T, E: ParseError<T>>() -> impl Parser<T, Output = f32, Error = E>
 where
   T: Clone + Offset,
-  T: Input + crate::traits::ParseTo<f32> + Compare<&'static str>,
+  T: Input + crate::traits::ParseTo + Compare<&'static str>,
   <T as Input>::Item: AsChar + Clone,
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
@@ -1365,7 +1366,7 @@ where
 pub fn double<T, E: ParseError<T>>() -> impl Parser<T, Output = f64, Error = E>
 where
   T: Clone + Offset,
-  T: Input + crate::traits::ParseTo<f64> + Compare<&'static str>,
+  T: Input + crate::traits::ParseTo + Compare<&'static str>,
   <T as Input>::Item: AsChar + Clone,
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
@@ -1385,10 +1386,11 @@ struct Float<O, E> {
 impl<I, O, E: ParseError<I>> Parser<I> for Float<O, E>
 where
   I: Clone + Offset,
-  I: Input + crate::traits::ParseTo<O> + Compare<&'static str>,
+  I: Input + crate::traits::ParseTo + Compare<&'static str>,
   <I as Input>::Item: AsChar + Clone,
   I: AsBytes,
   I: for<'a> Compare<&'a [u8]>,
+  O: FromStr,
 {
   type Output = O;
   type Error = E;

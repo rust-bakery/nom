@@ -1407,7 +1407,7 @@ use crate::traits::ParseTo;
 /// ```
 pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
-  T: Clone + Offset + ParseTo<f32> + Compare<&'static str>,
+  T: Clone + Offset + ParseTo + Compare<&'static str>,
   T: Input,
   <T as Input>::Item: AsChar,
   <T as Input>::Iter: Clone,
@@ -1457,7 +1457,7 @@ where
 /// ```
 pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
-  T: Clone + Offset + ParseTo<f64> + Compare<&'static str>,
+  T: Clone + Offset + ParseTo + Compare<&'static str>,
   T: Input,
   <T as Input>::Item: AsChar,
   <T as Input>::Iter: Clone,
