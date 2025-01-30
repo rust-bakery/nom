@@ -462,7 +462,7 @@ impl<'a> Input for &'a str {
         let (str1, str2) = self.split_at(i);
         Ok((str2, str1))
       }
-      None => Ok(self.split_at(0)),
+      None => Ok(self.take_split(self.input_len())),
     }
   }
 

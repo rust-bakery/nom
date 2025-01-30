@@ -269,3 +269,15 @@ fn issue_1586_parser_iterator_impl() {
 
   assert_eq!(parse_input("123\n456").collect::<Vec<_>>(), vec![123, 456]);
 }
+
+#[test]
+fn issue_1809_complete_string_parser_returns_wrong_slice() {
+  use nom::character::complete::multispace0;
+  use nom::combinator::recognize;
+
+  let input = "\n";
+  assert_eq!(
+    recognize::<_, nom::error::Error<_>, _>(multispace0).parse(input),
+    Ok(("", "\n"))
+  );
+}
