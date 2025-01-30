@@ -5,10 +5,10 @@ use core::marker::PhantomData;
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
 use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
-use crate::Complete;
 use crate::Emit;
 use crate::Input;
 use crate::OutputM;
+use crate::{Complete, IntoInput};
 
 /// Recognizes a pattern
 ///
@@ -358,8 +358,8 @@ where
 /// ```
 pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  I: Input + FindSubstring<T>,
-  T: Input + Clone,
+  I: Input + FindSubstring<T::Input>,
+  T: IntoInput,
 {
   let mut parser = super::take_until(tag);
 

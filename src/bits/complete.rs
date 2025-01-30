@@ -30,11 +30,11 @@ use crate::traits::{Input, ToUsize};
 /// // Tries to consume 12 bits but only 8 are available
 /// assert_eq!(parser(([0b00010010].as_ref(), 0), 12), Err(nom::Err::Error(Error{input: ([0b00010010].as_ref(), 0), code: ErrorKind::Eof })));
 /// ```
-pub fn take<I, O, C, E: ParseError<(I, usize)>>(
+pub fn take<'a, I, O, C, E: ParseError<(I, usize)>>(
   count: C,
 ) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
   C: ToUsize,
   O: From<u8> + AddAssign + Shl<usize, Output = O> + Shr<usize, Output = O>,
 {
@@ -59,7 +59,7 @@ where
           break;
         }
         let val: O = if offset == 0 {
-          byte.into()
+          (*byte).into()
         } else {
           ((byte << offset) >> offset).into()
         };
@@ -80,12 +80,12 @@ where
 }
 
 /// Generates a parser taking `count` bits and comparing them to `pattern`
-pub fn tag<I, O, C, E: ParseError<(I, usize)>>(
+pub fn tag<'a, I, O, C, E: ParseError<(I, usize)>>(
   pattern: O,
   count: C,
 ) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
-  I: Input<Item = u8> + Clone,
+  I: Input<Item = &'a u8> + Clone,
   C: ToUsize,
   O: From<u8> + AddAssign + Shl<usize, Output = O> + Shr<usize, Output = O> + PartialEq,
 {
@@ -118,9 +118,9 @@ where
 /// assert_eq!(parse(([0b10000000].as_ref(), 0)), Ok((([0b10000000].as_ref(), 1), true)));
 /// assert_eq!(parse(([0b10000000].as_ref(), 1)), Ok((([0b10000000].as_ref(), 2), false)));
 /// ```
-pub fn bool<I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
+pub fn bool<'a, I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   let (res, bit): (_, u32) = take(1usize)(input)?;
   Ok((res, bit != 0))

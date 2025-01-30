@@ -12,7 +12,6 @@ use crate::error::ParseError;
 use crate::internal::{Err, Needed, Parser};
 use crate::lib::std::result::Result::*;
 use crate::traits::{Compare, CompareResult};
-use crate::AsChar;
 use crate::Check;
 use crate::ExtendInto;
 use crate::FindSubstring;
@@ -23,6 +22,7 @@ use crate::Mode;
 use crate::OutputM;
 use crate::OutputMode;
 use crate::ToUsize;
+use crate::{AsChar, IntoInput};
 
 /// Recognizes a pattern.
 ///
@@ -44,11 +44,11 @@ use crate::ToUsize;
 /// ```
 pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
 where
-  I: Input + Compare<T>,
-  T: Input + Clone,
+  I: Input + Compare<T::Input>,
+  T: IntoInput,
 {
   Tag {
-    tag,
+    tag: tag.into_input(),
     e: PhantomData,
   }
 }
@@ -113,11 +113,11 @@ where
 /// ```
 pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
 where
-  I: Input + Compare<T>,
-  T: Input + Clone,
+  I: Input + Compare<T::Input>,
+  T: IntoInput,
 {
   TagNoCase {
-    tag,
+    tag: tag.into_input(),
     e: PhantomData,
   }
 }
@@ -595,11 +595,12 @@ where
 /// ```
 pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
 where
-  I: Input + FindSubstring<T>,
-  T: Clone,
+  I: Input + FindSubstring<T::Input>,
+  T: IntoInput,
+  T::Input: Clone,
 {
   TakeUntil {
-    tag,
+    tag: tag.into_input(),
     e: PhantomData,
   }
 }
