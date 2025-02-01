@@ -111,7 +111,7 @@ where
   move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
-/// Returns the longest slice of the matches the pattern.
+/// Returns the longest input slice (at least 1) that matches the pattern.
 ///
 /// The parser will return the longest slice consisting of the characters in provided in the
 /// combinator's argument.
