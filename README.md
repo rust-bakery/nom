@@ -280,7 +280,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [Wasm](https://github.com/fabrizio-m/wasm-nom),
 [Pseudocode](https://github.com/Gungy2/pseudocod),
 [Filter for MeiliSearch](https://github.com/meilisearch/meilisearch),
-[PotterScript](https://github.com/fmiras/potterscript)
+[PotterScript](https://github.com/fmiras/potterscript),
+[R](https://github.com/kpagacz/tergo)
 - Interface definition formats: [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
 [GIF](https://github.com/Geal/gif.rs),
