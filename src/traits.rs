@@ -1078,20 +1078,20 @@ impl<'a, 'b> FindSubstring<&'b str> for &'a str {
 }
 
 /// Used to integrate `str`'s `parse()` method
-pub trait ParseTo<R> {
+pub trait ParseTo {
   /// Succeeds if `parse()` succeeded. The byte slice implementation
   /// will first convert it to a `&str`, then apply the `parse()` function
-  fn parse_to(&self) -> Option<R>;
+  fn parse_to<R: FromStr>(&self) -> Option<R>;
 }
 
-impl<'a, R: FromStr> ParseTo<R> for &'a [u8] {
-  fn parse_to(&self) -> Option<R> {
+impl<'a> ParseTo for &'a [u8] {
+  fn parse_to<R: FromStr>(&self) -> Option<R> {
     from_utf8(self).ok().and_then(|s| s.parse().ok())
   }
 }
 
-impl<'a, R: FromStr> ParseTo<R> for &'a str {
-  fn parse_to(&self) -> Option<R> {
+impl<'a> ParseTo for &'a str {
+  fn parse_to<R: FromStr>(&self) -> Option<R> {
     self.parse().ok()
   }
 }
