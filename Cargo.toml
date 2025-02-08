@@ -35,7 +35,7 @@ default = ["std"]
 docsrs = []
 
 [dependencies.memchr]
-version = "2.3"
+version = "2.4"
 default-features = false
 
 [dev-dependencies]
