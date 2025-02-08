@@ -269,7 +269,7 @@ Here is a (non exhaustive) list of known projects using nom:
 - Programming languages:
 [PHP](https://github.com/tagua-vm/parser),
 [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs),
-[GLSL](https://github.com/phaazon/glsl),
+[GLSL](https://sr.ht/~hadronized/glsl)
 [Lua](https://github.com/rozbb/nom-lua53),
 [Python](https://github.com/ProgVal/rust-python-parser),
 [SQL](https://github.com/ms705/nom-sql),
