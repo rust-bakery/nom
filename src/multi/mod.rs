@@ -849,6 +849,103 @@ where
   }
 }
 
+/// Applies the parser `f` until the parser `g` produces a result.
+///
+/// Returns a tuple of the number of times `f` succeeded and the result of `g`.
+///
+/// `f` keeps going so long as `g` produces [`Err::Error`]. To instead chain an error up, see [`cut`][crate::combinator::cut].
+///
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
+/// use nom::multi::many_till_count;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, (usize, &str)> {
+///   many_till_count(tag("abc"), tag("end")).parse(s)
+/// };
+///
+/// assert_eq!(parser("abcabcend"), Ok(("", (2, "end"))));
+/// assert_eq!(parser("abc123end"), Err(Err::Error(Error::new("123end", ErrorKind::Tag))));
+/// assert_eq!(parser("123123end"), Err(Err::Error(Error::new("123123end", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// assert_eq!(parser("abcendefg"), Ok(("efg", (1, "end"))));
+/// ```
+pub fn many_till_count<I, E, F, G>(
+  f: F,
+  g: G,
+) -> impl Parser<I, Output = (usize, <G as Parser<I>>::Output), Error = E>
+where
+  I: Clone + Input,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
+  E: ParseError<I>,
+{
+  ManyTillCount {
+    f,
+    g,
+    e: PhantomData,
+  }
+}
+
+/// Parser implementation for the [many_till_count] combinator
+pub struct ManyTillCount<F, G, E> {
+  f: F,
+  g: G,
+  e: PhantomData<E>,
+}
+
+impl<I, F, G, E> Parser<I> for ManyTillCount<F, G, E>
+where
+  I: Clone + Input,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
+  E: ParseError<I>,
+{
+  type Output = (usize, <G as Parser<I>>::Output);
+  type Error = E;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    mut i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut count = OM::Output::bind(|| 0);
+    loop {
+      let len = i.input_len();
+      match self
+        .g
+        .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
+      {
+        Ok((i1, o)) => return Ok((i1, OM::Output::combine(count, o, |res, o| (res, o)))),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(i)) => return Err(Err::Incomplete(i)),
+        Err(Err::Error(_)) => {
+          match self.f.process::<OM>(i.clone()) {
+            Err(Err::Error(err)) => {
+              return Err(Err::Error(OM::Error::map(err, |err| {
+                E::append(i, ErrorKind::ManyTill, err)
+              })))
+            }
+            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+            Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+            Ok((i1, o)) => {
+              // infinite loop check: the parser must always consume
+              if i1.input_len() == len {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  E::from_error_kind(i, ErrorKind::Many0)
+                })));
+              }
+
+              i = i1;
+
+              count = OM::Output::combine(count, o, |acc, _o| acc + 1)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 /// Runs the embedded parser `count` times, gathering the results in a `Vec`
 ///
 /// # Arguments

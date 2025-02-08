@@ -14,7 +14,7 @@ use crate::{
   lib::std::vec::Vec,
   multi::{
     count, fold, fold_many0, fold_many1, fold_many_m_n, length_count, many, many0, many1, many_m_n,
-    many_till, separated_list0, separated_list1,
+    many_till, many_till_count, separated_list0, separated_list1,
   },
 };
 
@@ -180,6 +180,31 @@ fn many_till_test() {
 
   let res_a = (vec![&b"abcd"[..], &b"abcd"[..]], &b"efgh"[..]);
   let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
+  assert_eq!(multi(&a[..]), Ok((&b"abcd"[..], res_a)));
+  assert_eq!(multi(&b[..]), Ok((&b"abcd"[..], res_b)));
+  assert_eq!(
+    multi(&c[..]),
+    Err(Err::Error(error_node_position!(
+      &c[..],
+      ErrorKind::ManyTill,
+      error_position!(&c[..], ErrorKind::Tag)
+    )))
+  );
+}
+
+#[test]
+fn many_till_count_test() {
+  #[allow(clippy::type_complexity)]
+  fn multi(i: &[u8]) -> IResult<&[u8], (usize, &[u8])> {
+    many_till_count(tag("abcd"), tag("efgh")).parse(i)
+  }
+
+  let a = b"abcdabcdefghabcd";
+  let b = b"efghabcd";
+  let c = b"azerty";
+
+  let res_a = (2, &b"efgh"[..]);
+  let res_b = (0, &b"efgh"[..]);
   assert_eq!(multi(&a[..]), Ok((&b"abcd"[..], res_a)));
   assert_eq!(multi(&b[..]), Ok((&b"abcd"[..], res_b)));
   assert_eq!(
