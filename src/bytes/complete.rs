@@ -5,6 +5,7 @@ use core::marker::PhantomData;
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
 use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
+use crate::AsByte;
 use crate::Complete;
 use crate::Emit;
 use crate::Input;
@@ -485,6 +486,75 @@ where
   move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
+/// Takes 1 byte and checks that it satisfies a predicate
+///
+/// *Complete version*: Will return an error if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+/// # use nom::bytes::complete::satisfy;
+/// fn parser(i: &[u8]) -> IResult<&[u8], u8> {
+///     satisfy(|c| c == b'a' || c == b'b')(i)
+/// }
+/// assert_eq!(parser(b"abc" as &[u8]), Ok((b"bc" as &[u8], b'a')));
+/// assert_eq!(parser(b"cd" as &[u8]), Err(Err::Error(Error::new(b"cd" as &[u8], ErrorKind::Satisfy))));
+/// assert_eq!(parser(b"" as &[u8]), Err(Err::Error(Error::new(b"" as &[u8], ErrorKind::Satisfy))));
+/// ```
+pub fn satisfy<F, I, Error: ParseError<I>>(predicate: F) -> impl FnMut(I) -> IResult<I, u8, Error>
+where
+  I: Input,
+  <I as Input>::Item: AsByte,
+  F: Fn(u8) -> bool,
+{
+  let mut parser = super::satisfy(predicate);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
+}
+
+/// Matches 1 byte and checks it is equal to one of the provided bytes
+///
+/// *Complete version*: Will return an error if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::bytes::complete::one_of;
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>(b"abc" as &[u8])(b"b" as &[u8]), Ok((b"" as &[u8], b'b')));
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>(b"a" as &[u8])(b"bc" as &[u8]), Err(Err::Error((b"bc" as &[u8], ErrorKind::OneOf))));
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>(b"a" as &[u8])(b"" as &[u8]), Err(Err::Error((b"" as &[u8], ErrorKind::OneOf))));
+/// ```
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, u8, Error>
+where
+  I: Input,
+  <I as Input>::Item: AsByte,
+  T: FindToken<u8>,
+{
+  let mut parser = super::one_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
+}
+
+/// Recognizes a byte that is not in the provided bytes.
+///
+/// *Complete version*: Will return an error if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::bytes::complete::none_of;
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>(b"abc" as &[u8])(b"z" as &[u8]), Ok((b"" as &[u8], b'z')));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>(b"ab" as &[u8])(b"a" as &[u8]), Err(Err::Error((b"a" as &[u8], ErrorKind::NoneOf))));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>(b"a" as &[u8])(b"" as &[u8]), Err(Err::Error((b"" as &[u8], ErrorKind::NoneOf))));
+/// ```
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, u8, Error>
+where
+  I: Input,
+  <I as Input>::Item: AsByte,
+  T: FindToken<u8>,
+{
+  let mut parser = super::none_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -528,7 +598,12 @@ mod tests {
 
     delimited(
       char('"'),
-      escaped(opt(none_of(r#"\""#)), '\\', one_of(r#"\"rnt"#)),
+      escaped(
+        // Specified the none_of and one_of parsers here as this PR adds none_of and one_of for the bytes::complete module
+        opt(crate::character::complete::none_of(r#"\""#)),
+        '\\',
+        crate::character::complete::one_of(r#"\"rnt"#),
+      ),
       char('"'),
     )
     .parse(input)
