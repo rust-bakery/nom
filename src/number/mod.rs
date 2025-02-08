@@ -12,7 +12,7 @@ use crate::{
   error::{make_error, ErrorKind, ParseError},
   sequence::pair,
   AsBytes, AsChar, Compare, Either, Emit, Err, Input, IsStreaming, Mode, Needed, Offset, OutputM,
-  Parser,
+  OutputMode, Parser,
 };
 
 pub mod complete;
@@ -1397,8 +1397,23 @@ where
     &mut self,
     input: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let (i, s) =
-      recognize_float_or_exceptions().process::<OutputM<Emit, OM::Error, OM::Incomplete>>(input)?;
+    let inp = input.clone();
+    let (_, s) = recognize_float_or_exceptions()
+      .process::<OutputM<Emit, OM::Error, OM::Incomplete>>(inp.as_bytes())
+      .map_err(
+        |e: crate::Err<(), <<OM as OutputMode>::Error as Mode>::Output<()>>| match e {
+          Err::Incomplete(i) => Err::Incomplete(i),
+          Err::Error(_) => Err::Error(OM::Error::bind(|| {
+            E::from_error_kind(input.clone(), crate::error::ErrorKind::Float)
+          })),
+          Err::Failure(_) => Err::Failure(E::from_error_kind(
+            input.clone(),
+            crate::error::ErrorKind::Float,
+          )),
+        },
+      )?;
+    let recognized_length = s.len();
+    let (i, s) = input.take_split(recognized_length);
 
     match s.parse_to() {
       Some(f) => Ok((i, OM::Output::bind(|| f))),
