@@ -7,6 +7,7 @@ use crate::internal::{Err, IResult, Needed};
 #[cfg(feature = "alloc")]
 use crate::lib::std::boxed::Box;
 use crate::number::complete::u8;
+use crate::Parser;
 
 macro_rules! assert_parse(
   ($left: expr, $right: expr) => {
@@ -73,14 +74,14 @@ fn end_of_input() {
 fn rest_on_slices() {
   let input: &[u8] = &b"Hello, world!"[..];
   let empty: &[u8] = &b""[..];
-  assert_parse!(rest(input), Ok((empty, input)));
+  assert_parse!(rest().parse_complete(input), Ok((empty, input)));
 }
 
 #[test]
 fn rest_on_strs() {
   let input: &str = "Hello, world!";
   let empty: &str = "";
-  assert_parse!(rest(input), Ok((empty, input)));
+  assert_parse!(rest().parse_complete(input), Ok((empty, input)));
 }
 
 #[test]
