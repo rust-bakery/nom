@@ -73,7 +73,7 @@ where
 ///   bits::<_, _, Error<(&[u8], usize)>, _, _>((
 ///     take(4usize),
 ///     take(8usize),
-///     bytes::<_, _, Error<&[u8]>, _, _>(rest)
+///     bytes::<_, _, Error<&[u8]>, _, _>(rest())
 ///   ))(input)
 /// }
 ///
