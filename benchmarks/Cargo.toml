@@ -6,8 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-criterion = "0.5.0"
-jemallocator = "0.5.4"
+criterion = { workspace = true }
+jemallocator = { workspace = true }
 nom = { path = "../" }
 
 [lib]
@@ -55,5 +55,5 @@ path = "benches/json_streaming.rs"
 harness = false
 
 [dev-dependencies]
-codspeed-criterion-compat = "2.4.1"
-nom-language = { path = "../nom-language" }
+codspeed-criterion-compat = { workspace = true }
+nom-language = { workspace = true }

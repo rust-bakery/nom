@@ -34,14 +34,13 @@ std = ["alloc", "memchr/std"]
 default = ["std"]
 docsrs = []
 
-[dependencies.memchr]
-version = "2.3"
-default-features = false
+[dependencies]
+memchr= { workspace = true }
 
 [dev-dependencies]
-doc-comment = "0.3"
-proptest = "=1.0.0"
-nom-language = { path = "./nom-language" }
+doc-comment = { workspace = true }
+proptest = { workspace = true }
+nom-language = { workspace = true }
 
 [package.metadata.docs.rs]
 features = ["alloc", "std", "docsrs"]
@@ -147,3 +146,12 @@ maintenance = { status = "actively-developed" }
 
 [workspace]
 members = [".", "benchmarks/", "nom-language"]
+
+[workspace.dependencies]
+codspeed-criterion-compat = "2.4.1"
+criterion = "0.5.0"
+doc-comment = "0.3"
+jemallocator = "0.5.4"
+memchr = { version = "2.3", default-features = false }
+nom-language = { path = "nom-language" }
+proptest = "=1.0.0"
