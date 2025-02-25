@@ -1,10 +1,9 @@
 //! Traits input types have to implement to work with nom combinators
-use core::iter::Enumerate;
+use core::iter::{Cloned, Enumerate};
 use core::str::CharIndices;
 
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::iter::Copied;
 use crate::lib::std::ops::{
   Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
@@ -190,9 +189,9 @@ pub trait Input: Clone + Sized {
   }
 }
 
-impl<'a> Input for &'a [u8] {
-  type Item = u8;
-  type Iter = Copied<Iter<'a, u8>>;
+impl<'a, T> Input for &'a [T] where T : Clone {
+  type Item = T;
+  type Iter = Cloned<Iter<'a, T>>;
   type IterIndices = Enumerate<Self::Iter>;
 
   fn input_len(&self) -> usize {
@@ -218,12 +217,12 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    self.iter().position(|b| predicate(*b))
+    self.iter().position(|b| predicate(b.clone()))
   }
 
   #[inline]
   fn iter_elements(&self) -> Self::Iter {
-    self.iter().copied()
+    self.iter().cloned()
   }
 
   #[inline]
@@ -245,7 +244,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c.clone())) {
       Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
@@ -260,7 +259,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c.clone())) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
@@ -274,7 +273,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c.clone())) {
       Some(i) => Ok(self.take_split(i)),
       None => Ok(self.take_split(self.len())),
     }
@@ -289,7 +288,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c.clone())) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok(self.take_split(i)),
       None => {
@@ -311,7 +310,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c.clone())) {
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
         if OM::Incomplete::is_streaming() {
@@ -336,7 +335,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c.clone())) {
       Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
