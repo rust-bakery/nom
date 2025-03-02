@@ -62,7 +62,7 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many0<I, F>(
   f: F,
-) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = <F as Parser<I>>::Error>
+) -> Many0<F>
 where
   I: Clone + Input,
   F: Parser<I>,

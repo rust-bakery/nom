@@ -34,7 +34,7 @@ pub enum Endianness {
 /// * `bound`: the number of bytes that will be read
 /// * `Uint`: the output type
 #[inline]
-fn be_uint<I, Uint, E: ParseError<I>>(bound: usize) -> impl Parser<I, Output = Uint, Error = E>
+fn be_uint<I, Uint, E: ParseError<I>>(bound: usize) -> BeUint<Uint, E>
 where
   I: Input<Item = u8>,
   Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
@@ -47,7 +47,9 @@ where
 }
 
 /// Big endian unsigned integer parser
-struct BeUint<Uint, E> {
+///
+/// See also: [`be_uint`]
+pub struct BeUint<Uint, E> {
   bound: usize,
   e: PhantomData<E>,
   u: PhantomData<Uint>,
@@ -97,6 +99,108 @@ where
   }
 }
 
+/// creates a big endian signed integer parser
+///
+/// * `bound`: the number of bytes that will be read
+/// * `Int`: the output type
+#[inline]
+pub fn be_int<I, E: ParseError<I>, Int>(bound: usize) -> BeInt<Int, E>
+where
+  I: Input<Item = u8>,
+  Int: HasUIntCounterpart,
+  Int::UInt: Default
+  + Shl<u8, Output = Int::UInt>
+  + Add<Int::UInt, Output = Int::UInt>
+  + From<u8>,
+{
+  BeInt {
+    bound,
+    e: PhantomData,
+    u: PhantomData,
+  }
+}
+
+/// Associates a signed integer type with its unsigned counterpart
+pub trait HasUIntCounterpart {
+  /// The type of the unsigned integer counterpart
+  type UInt;
+
+  /// Bit-wise conversion from the unsigned integer counterpart
+  fn from_uint(value: Self::UInt) -> Self;
+}
+
+macro_rules! impl_unit_counterpart {
+  ($($int:ident $uint:ident)*) => {
+    $(
+      impl HasUIntCounterpart for $int {
+        type UInt = $uint;
+
+        fn from_uint(value: Self::UInt) -> Self {
+            value as Self
+        }
+      }
+    )*
+  };
+}
+impl_unit_counterpart!(i8 u8 i16 u16 i32 u32 i64 u64 i128 u128 isize usize);
+
+/// Big endian signed integer parser
+///
+/// See also: [`be_int`] and [`HasUIntCounterpart`]
+pub struct BeInt<Int, E> {
+  bound: usize,
+  e: PhantomData<E>,
+  u: PhantomData<Int>,
+}
+
+impl<I, Int, E: ParseError<I>> Parser<I> for BeInt<Int, E>
+where
+  I: Input<Item = u8>,
+  Int: HasUIntCounterpart,
+  Int::UInt: Default
+    + Shl<u8, Output = Int::UInt>
+    + Add<Int::UInt, Output = Int::UInt>
+    + From<u8>,
+{
+  type Output = Int;
+  type Error = E;
+
+  #[inline(always)]
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    input: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    if input.input_len() < self.bound {
+      if OM::Incomplete::is_streaming() {
+        Err(Err::Incomplete(Needed::new(self.bound - input.input_len())))
+      } else {
+        Err(Err::Error(OM::Error::bind(|| {
+          make_error(input, ErrorKind::Eof)
+        })))
+      }
+    } else {
+      let res = OM::Output::bind(|| {
+        let mut res = <Int::UInt as Default>::default();
+
+        // special case to avoid shift a byte with overflow
+        if self.bound > 1 {
+          for byte in input.iter_elements().take(self.bound) {
+            res = (res << 8) + byte.into();
+          }
+        } else {
+          for byte in input.iter_elements().take(self.bound) {
+            res = byte.into();
+          }
+        }
+
+        Int::from_uint(res)
+      });
+
+      Ok((input.take_from(self.bound), res))
+    }
+  }
+}
+
 /// Recognizes an unsigned 1 byte integer.
 ///
 /// ```rust
@@ -111,7 +215,7 @@ where
 /// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn be_u8<I, E: ParseError<I>>() -> impl Parser<I, Output = u8, Error = E>
+pub fn be_u8<I, E: ParseError<I>>() -> BeUint<u8, E>
 where
   I: Input<Item = u8>,
 {
@@ -132,7 +236,7 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn be_u16<I, E: ParseError<I>>() -> impl Parser<I, Output = u16, Error = E>
+pub fn be_u16<I, E: ParseError<I>>() -> BeUint<u16, E>
 where
   I: Input<Item = u8>,
 {
@@ -174,7 +278,7 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
-pub fn be_u32<I, E: ParseError<I>>() -> impl Parser<I, Output = u32, Error = E>
+pub fn be_u32<I, E: ParseError<I>>() -> BeUint<u32, E>
 where
   I: Input<Item = u8>,
 {
@@ -195,7 +299,7 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
-pub fn be_u64<I, E: ParseError<I>>() -> impl Parser<I, Output = u64, Error = E>
+pub fn be_u64<I, E: ParseError<I>>() -> BeUint<u64, E>
 where
   I: Input<Item = u8>,
 {
@@ -216,7 +320,7 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
-pub fn be_u128<I, E: ParseError<I>>() -> impl Parser<I, Output = u128, Error = E>
+pub fn be_u128<I, E: ParseError<I>>() -> BeUint<u128, E>
 where
   I: Input<Item = u8>,
 {
@@ -236,11 +340,11 @@ where
 /// assert_eq!(parser.parse(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn be_i8<I, E: ParseError<I>>() -> impl Parser<I, Output = i8, Error = E>
+pub fn be_i8<I, E: ParseError<I>>() -> BeInt<i8, E>
 where
   I: Input<Item = u8>,
 {
-  be_u8().map(|x| x as i8)
+  be_int(1)
 }
 
 /// Recognizes a big endian signed 2 bytes integer.
@@ -255,11 +359,11 @@ where
 /// assert_eq!(parser.parse(&b""[..]), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 #[inline]
-pub fn be_i16<I, E: ParseError<I>>() -> impl Parser<I, Output = i16, Error = E>
+pub fn be_i16<I, E: ParseError<I>>() -> BeInt<i16, E>
 where
   I: Input<Item = u8>,
 {
-  be_u16().map(|x| x as i16)
+  be_int(2)
 }
 
 /// Recognizes a big endian signed 3 bytes integer.
@@ -271,21 +375,24 @@ where
 /// let mut parser = be_i24::<_, (_, ErrorKind)>();
 ///
 /// assert_eq!(parser.parse(&b"\x00\x01\x02abcd"[..]), Ok((&b"abcd"[..], 0x000102)));
+/// assert_eq!(parser.parse(&b"\x80\x01\x02abcd"[..]), Ok((&b"abcd"[..], 0xFF800102_u32 as i32))); // TODO: figure out if this is correct
 /// assert_eq!(parser.parse(&b""[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
-pub fn be_i24<I, E: ParseError<I>>() -> impl Parser<I, Output = i32, Error = E>
+pub fn be_i24<I, E: ParseError<I>>() -> BeInt<i32, E>
 where
   I: Input<Item = u8>,
 {
-  // Same as the unsigned version but we need to sign-extend manually here
-  be_u24().map(|x| {
-    if x & 0x80_00_00 != 0 {
-      (x | 0xff_00_00_00) as i32
-    } else {
-      x as i32
-    }
-  })
+  be_int(3)
+
+  // // Same as the unsigned version but we need to sign-extend manually here
+  // be_u24().map(|x| {
+  //   if x & 0x80_00_00 != 0 {
+  //     (x | 0xff_00_00_00) as i32
+  //   } else {
+  //     x as i32
+  //   }
+  // })
 }
 
 /// Recognizes a big endian signed 4 bytes integer.
@@ -300,11 +407,11 @@ where
 /// assert_eq!(parser.parse(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
 /// ```
 #[inline]
-pub fn be_i32<I, E: ParseError<I>>() -> impl Parser<I, Output = i32, Error = E>
+pub fn be_i32<I, E: ParseError<I>>() -> BeInt<i32, E>
 where
   I: Input<Item = u8>,
 {
-  be_u32().map(|x| x as i32)
+  be_int(4)
 }
 
 /// Recognizes a big endian signed 8 bytes integer.
@@ -319,11 +426,11 @@ where
 /// assert_eq!(parser.parse(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
-pub fn be_i64<I, E: ParseError<I>>() -> impl Parser<I, Output = i64, Error = E>
+pub fn be_i64<I, E: ParseError<I>>() -> BeInt<i64, E>
 where
   I: Input<Item = u8>,
 {
-  be_u64().map(|x| x as i64)
+  be_int(8)
 }
 
 /// Recognizes a big endian signed 16 bytes integer.
@@ -338,11 +445,11 @@ where
 /// assert_eq!(parser.parse(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
-pub fn be_i128<I, E: ParseError<I>>() -> impl Parser<I, Output = i128, Error = E>
+pub fn be_i128<I, E: ParseError<I>>() -> BeInt<i128, E>
 where
   I: Input<Item = u8>,
 {
-  be_u128().map(|x| x as i128)
+  be_int(16)
 }
 
 /// creates a little endian unsigned integer parser

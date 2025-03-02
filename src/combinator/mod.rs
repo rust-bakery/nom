@@ -4,19 +4,14 @@
 
 use core::marker::PhantomData;
 
-#[cfg(feature = "alloc")]
-use crate::lib::std::boxed::Box;
-
 use crate::error::{ErrorKind, FromExternalError, ParseError};
 use crate::internal::*;
 use crate::lib::std::borrow::Borrow;
 use crate::lib::std::convert::Into;
 #[cfg(feature = "std")]
 use crate::lib::std::fmt::Debug;
-use crate::lib::std::mem::transmute;
-use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::traits::{AsChar, Input, ParseTo};
-use crate::traits::{Compare, CompareResult, Offset};
+use crate::traits::{Compare, Offset};
 
 #[cfg(test)]
 mod tests;
@@ -71,7 +66,7 @@ where
 /// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
 /// # }
 /// ```
-pub fn map<I, O, E: ParseError<I>, F, G>(parser: F, f: G) -> impl Parser<I, Output = O, Error = E>
+pub fn map<I, O, E: ParseError<I>, F, G>(parser: F, f: G) -> Map<F, G>
 where
   F: Parser<I, Error = E>,
   G: FnMut(<F as Parser<I>>::Output) -> O,
@@ -102,7 +97,7 @@ where
 pub fn map_res<I: Clone, O, E: ParseError<I> + FromExternalError<I, E2>, E2, F, G>(
   parser: F,
   f: G,
-) -> impl Parser<I, Output = O, Error = E>
+) -> MapRes<F, G>
 where
   F: Parser<I, Error = E>,
   G: FnMut(<F as Parser<I>>::Output) -> Result<O, E2>,
@@ -130,10 +125,7 @@ where
 /// assert_eq!(parse.parse("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
 /// # }
 /// ```
-pub fn map_opt<I: Clone, O, E: ParseError<I>, F, G>(
-  parser: F,
-  f: G,
-) -> impl Parser<I, Output = O, Error = E>
+pub fn map_opt<I: Clone, O, E: ParseError<I>, F, G>(parser: F, f: G) -> MapOpt<F, G>
 where
   F: Parser<I, Error = E>,
   G: FnMut(<F as Parser<I>>::Output) -> Option<O>,

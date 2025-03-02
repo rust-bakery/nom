@@ -42,7 +42,7 @@ use crate::ToUsize;
 /// assert_eq!(parser("S"), Err(Err::Error(Error::new("S", ErrorKind::Tag))));
 /// assert_eq!(parser("H"), Err(Err::Incomplete(Needed::new(4))));
 /// ```
-pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
+pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> Tag<T, Error>
 where
   I: Input + Compare<T>,
   T: Input + Clone,
@@ -111,7 +111,7 @@ where
 /// assert_eq!(parser("Something"), Err(Err::Error(Error::new("Something", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(5))));
 /// ```
-pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
+pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> TagNoCase<T, Error>
 where
   I: Input + Compare<T>,
   T: Input + Clone,
@@ -161,13 +161,13 @@ where
   }
 }
 
-/// Parser wrapper for `split_at_position`
-pub struct SplitPosition<F, E> {
+/// Parser implementation for [`take_till`]
+pub struct TakeTill<F, E> {
   predicate: F,
   error: PhantomData<E>,
 }
 
-impl<I, Error: ParseError<I>, F> Parser<I> for SplitPosition<F, Error>
+impl<I, Error: ParseError<I>, F> Parser<I> for TakeTill<F, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
@@ -179,28 +179,6 @@ where
   #[inline(always)]
   fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
     i.split_at_position_mode::<OM, _, _>(|c| (self.predicate)(c))
-  }
-}
-
-/// Parser wrapper for `split_at_position1`
-pub struct SplitPosition1<F, E> {
-  e: ErrorKind,
-  predicate: F,
-  error: PhantomData<E>,
-}
-
-impl<I, Error: ParseError<I>, F> Parser<I> for SplitPosition1<F, Error>
-where
-  I: Input,
-  F: Fn(<I as Input>::Item) -> bool,
-{
-  type Output = I;
-
-  type Error = Error;
-
-  #[inline(always)]
-  fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    i.split_at_position_mode1::<OM, _, _>(|c| (self.predicate)(c), self.e)
   }
 }
 
@@ -225,15 +203,35 @@ where
 /// assert_eq!(not_space("Nospace"), Ok(("", "Nospace")));
 /// assert_eq!(not_space(""), Err(Err::Error(Error::new("", ErrorKind::IsNot))));
 /// ```
-pub fn is_not<T, I, Error: ParseError<I>>(arr: T) -> impl Parser<I, Output = I, Error = Error>
+pub fn is_not<T, I, Error: ParseError<I>>(arr: T) -> IsNot<T, Error>
 where
   I: Input,
   T: FindToken<<I as Input>::Item>,
 {
-  SplitPosition1 {
-    e: ErrorKind::IsNot,
-    predicate: move |c| arr.find_token(c),
+  IsNot {
+    arr,
     error: PhantomData,
+  }
+}
+
+/// Parser implementation for [`is_not`]
+pub struct IsNot<T, E> {
+  arr: T,
+  error: PhantomData<E>,
+}
+
+impl<T, I, Error: ParseError<I>> Parser<I> for IsNot<T, Error>
+where
+  I: Input,
+  T: FindToken<<I as Input>::Item>,
+{
+  type Output = I;
+
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    i.split_at_position_mode1::<OM, _, _>(|c| self.arr.find_token(c), ErrorKind::IsNot)
   }
 }
 
@@ -258,15 +256,35 @@ where
 /// assert_eq!(hex("D15EA5E"), Ok(("", "D15EA5E")));
 /// assert_eq!(hex(""), Err(Err::Error(Error::new("", ErrorKind::IsA))));
 /// ```
-pub fn is_a<T, I, Error: ParseError<I>>(arr: T) -> impl Parser<I, Output = I, Error = Error>
+pub fn is_a<T, I, Error: ParseError<I>>(arr: T) -> IsA<T, Error>
 where
   I: Input,
   T: FindToken<<I as Input>::Item>,
 {
-  SplitPosition1 {
-    e: ErrorKind::IsA,
-    predicate: move |c| !arr.find_token(c),
+  IsA {
+    arr,
     error: PhantomData,
+  }
+}
+
+/// Parser implementation for [`is_a`]
+pub struct IsA<T, E> {
+  arr: T,
+  error: PhantomData<E>,
+}
+
+impl<T, I, Error: ParseError<I>> Parser<I> for IsA<T, Error>
+where
+  I: Input,
+  T: FindToken<<I as Input>::Item>,
+{
+  type Output = I;
+
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    i.split_at_position_mode1::<OM, _, _>(|c| !self.arr.find_token(c), ErrorKind::IsA)
   }
 }
 
@@ -289,14 +307,35 @@ where
 /// assert_eq!(alpha(b"latin"), Ok((&b""[..], &b"latin"[..])));
 /// assert_eq!(alpha(b""), Ok((&b""[..], &b""[..])));
 /// ```
-pub fn take_while<F, I, Error: ParseError<I>>(cond: F) -> impl Parser<I, Output = I, Error = Error>
+pub fn take_while<F, I, Error: ParseError<I>>(cond: F) -> TakeWhile<F, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  SplitPosition {
-    predicate: move |c| !cond(c),
+  TakeWhile {
+    predicate_not: cond,
     error: PhantomData,
+  }
+}
+
+/// Parser implementation for [`take_while`]
+pub struct TakeWhile<F, E> {
+  predicate_not: F,
+  error: PhantomData<E>,
+}
+
+impl<I, Error: ParseError<I>, F> Parser<I> for TakeWhile<F, Error>
+where
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
+{
+  type Output = I;
+
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    i.split_at_position_mode::<OM, _, _>(|c| !(self.predicate_not)(c))
   }
 }
 
@@ -324,15 +363,35 @@ where
 /// assert_eq!(alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhile1))));
 /// ```
-pub fn take_while1<F, I, Error: ParseError<I>>(cond: F) -> impl Parser<I, Output = I, Error = Error>
+pub fn take_while1<F, I, Error: ParseError<I>>(cond: F) -> TakeWhile1<F, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  SplitPosition1 {
-    e: ErrorKind::TakeWhile1,
-    predicate: move |c| !cond(c),
+  TakeWhile1 {
+    predicate_not: cond,
     error: PhantomData,
+  }
+}
+
+/// Parser implementation for [`take_while1`]
+pub struct TakeWhile1<F, E> {
+  predicate_not: F,
+  error: PhantomData<E>,
+}
+
+impl<I, Error: ParseError<I>, F> Parser<I> for TakeWhile1<F, Error>
+where
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
+{
+  type Output = I;
+
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    i.split_at_position_mode1::<OM, _, _>(|c| !(self.predicate_not)(c), ErrorKind::TakeWhile1)
   }
 }
 
@@ -365,7 +424,7 @@ pub fn take_while_m_n<F, I, Error: ParseError<I>>(
   m: usize,
   n: usize,
   predicate: F,
-) -> impl Parser<I, Output = I, Error = Error>
+) -> TakeWhileMN<F, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
@@ -378,7 +437,7 @@ where
   }
 }
 
-/// Parser implementation for [take_while_m_n]
+/// Parser implementation for [`take_while_m_n`]
 pub struct TakeWhileMN<F, E> {
   m: usize,
   n: usize,
@@ -461,13 +520,12 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Ok(("", "")));
 /// ```
-#[allow(clippy::redundant_closure)]
-pub fn take_till<F, I, Error: ParseError<I>>(cond: F) -> impl Parser<I, Output = I, Error = Error>
+pub fn take_till<F, I, Error: ParseError<I>>(cond: F) -> TakeTill<F, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  SplitPosition {
+  TakeTill {
     predicate: cond,
     error: PhantomData,
   }
@@ -495,16 +553,35 @@ where
 /// assert_eq!(till_colon("12345"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(till_colon(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-#[allow(clippy::redundant_closure)]
-pub fn take_till1<F, I, Error: ParseError<I>>(cond: F) -> impl Parser<I, Output = I, Error = Error>
+pub fn take_till1<F, I, Error: ParseError<I>>(cond: F) -> TakeTill1<F, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  SplitPosition1 {
-    e: ErrorKind::TakeTill1,
+  TakeTill1 {
     predicate: cond,
     error: PhantomData,
+  }
+}
+
+/// Parser implementation for [`take_till1`]
+pub struct TakeTill1<F, E> {
+  predicate: F,
+  error: PhantomData<E>,
+}
+
+impl<I, Error: ParseError<I>, F> Parser<I> for TakeTill1<F, Error>
+where
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
+{
+  type Output = I;
+
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    i.split_at_position_mode1::<OM, _, _>(|c| (self.predicate)(c), ErrorKind::TakeTill1)
   }
 }
 
@@ -531,7 +608,7 @@ where
 /// assert_eq!(take6("things"), Ok(("", "things")));
 /// assert_eq!(take6("short"), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl Parser<I, Output = I, Error = Error>
+pub fn take<C, I, Error: ParseError<I>>(count: C) -> Take<Error>
 where
   I: Input,
   C: ToUsize,
