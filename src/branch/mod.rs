@@ -14,6 +14,8 @@ use crate::internal::{Err, Mode, Parser};
 /// It takes as argument either a tuple or an array of parsers. If using a
 /// tuple, there is a maximum of 21 parsers. If you need more, it is possible to
 /// use an array.
+/// 
+/// Errors if all parsers do not output the same type.
 ///
 /// ```rust
 /// # use nom::error_position;
