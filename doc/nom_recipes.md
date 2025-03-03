@@ -365,8 +365,8 @@ use std::str::FromStr;
 // will recognize the name in "Hello, name!"
 fn parse_name(input: &str) -> IResult<&str, &str> {
   let (i, _) = tag("Hello, ").parse(input)?;
-  let (i, name) = take_while(|c:char| c.is_alphabetic())(i)?;
-  let (i, _) = tag("!")(i)?;
+  let (i, name) = take_while(|c:char| c.is_alphabetic()).parse(i)?;
+  let (i, _) = tag("!").parse(i)?;
 
   Ok((i, name))
 }

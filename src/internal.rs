@@ -408,6 +408,8 @@ pub trait Parser<Input> {
 
   /// A parser takes in input type, and returns a `Result` containing
   /// either the remaining input and the output value, or an error
+  /// 
+  /// Use this function for streaming parsers that recognize incomplete input.
   #[inline]
   fn parse(&mut self, input: Input) -> IResult<Input, Self::Output, Self::Error> {
     self.process::<OutputM<Emit, Emit, Streaming>>(input)
@@ -415,6 +417,9 @@ pub trait Parser<Input> {
 
   /// A parser takes in input type, and returns a `Result` containing
   /// either the remaining input and the output value, or an error
+  /// 
+  /// Use this function for complete parsers that fail on incomplete 
+  /// input. This should be used in `nom7` style function parsers.
   #[inline]
   fn parse_complete(&mut self, input: Input) -> IResult<Input, Self::Output, Self::Error> {
     self.process::<OutputM<Emit, Emit, Complete>>(input)

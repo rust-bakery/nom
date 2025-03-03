@@ -54,7 +54,7 @@ use nom::bytes::complete::take;
 
 pub fn length_value(input: &[u8]) -> IResult<&[u8],&[u8]> {
     let (input, length) = be_u16(input)?;
-    take(length)(input)
+    take(length).parse_complete(input)
 }
 ```
 
@@ -194,7 +194,7 @@ prints its hexdump if the child parser encountered an error:
 use nom::{IResult, error::dbg_dmp, bytes::complete::tag};
 
 fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-  dbg_dmp(tag("abcd"), "tag")(i)
+  dbg_dmp(tag("abcd"), "tag").parse(i)
 }
 
   let a = &b"efghijkl"[..];

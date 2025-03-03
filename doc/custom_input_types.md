@@ -1,3 +1,5 @@
+> **Note:** This document is for `nom7`. These traits were replaced in `nom8` by one `Input` trait, with the same principles.
+
 # Custom input types
 
 While historically, nom has worked mainly on `&[u8]` and `&str`, it can actually
