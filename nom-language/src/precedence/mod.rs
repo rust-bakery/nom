@@ -427,7 +427,7 @@ pub fn left_assoc<I, E, O, OP, G, F, B>(
   child: F,
   operator: G,
   builder: B,
-) -> impl Parser<I, Output = O, Error = E>
+) -> LeftAssoc<F, G, B>
 where
   I: Clone + Input,
   E: ParseError<I>,

@@ -582,7 +582,7 @@ impl Offset for [u8] {
   }
 }
 
-impl<'a> Offset for &'a [u8] {
+impl Offset for &[u8] {
   fn offset(&self, second: &Self) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
@@ -600,7 +600,7 @@ impl Offset for str {
   }
 }
 
-impl<'a> Offset for &'a str {
+impl Offset for &str {
   fn offset(&self, second: &Self) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
@@ -615,7 +615,7 @@ pub trait AsBytes {
   fn as_bytes(&self) -> &[u8];
 }
 
-impl<'a> AsBytes for &'a str {
+impl AsBytes for &str {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
     (*self).as_bytes()
@@ -629,7 +629,7 @@ impl AsBytes for str {
   }
 }
 
-impl<'a> AsBytes for &'a [u8] {
+impl AsBytes for &[u8] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
     self
@@ -643,7 +643,7 @@ impl AsBytes for [u8] {
   }
 }
 
-impl<'a, const N: usize> AsBytes for &'a [u8; N] {
+impl<const N: usize> AsBytes for &[u8; N] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
     self.as_slice()
@@ -729,7 +729,8 @@ impl AsChar for u8 {
     self == b'\n'
   }
 }
-impl<'a> AsChar for &'a u8 {
+
+impl AsChar for &u8 {
   #[inline]
   fn as_char(self) -> char {
     *self as char
@@ -813,7 +814,7 @@ impl AsChar for char {
   }
 }
 
-impl<'a> AsChar for &'a char {
+impl AsChar for &char {
   #[inline]
   fn as_char(self) -> char {
     *self
@@ -888,7 +889,7 @@ fn lowercase_byte(c: u8) -> u8 {
   }
 }
 
-impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
+impl<'b> Compare<&'b [u8]> for [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b [u8]) -> CompareResult {
     let pos = self.iter().zip(t.iter()).position(|(a, b)| a != b);
@@ -921,18 +922,43 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
   }
 }
 
-impl<'a, 'b> Compare<&'b str> for &'a [u8] {
+impl<'b> Compare<&'b [u8]> for &[u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'b [u8]) -> CompareResult {
+    (*self).compare(t)
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
+    (*self).compare_no_case(t)
+  }
+}
+
+impl<'b> Compare<&'b str> for [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
     self.compare(AsBytes::as_bytes(t))
   }
+
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
     self.compare_no_case(AsBytes::as_bytes(t))
   }
 }
 
-impl<'a, 'b> Compare<&'b str> for &'a str {
+impl<'b> Compare<&'b str> for &[u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'b str) -> CompareResult {
+    (*self).compare(t)
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    (*self).compare_no_case(t)
+  }
+}
+
+impl<'b> Compare<&'b str> for str {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
     self.as_bytes().compare(t.as_bytes())
@@ -959,7 +985,19 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   }
 }
 
-impl<'a, 'b> Compare<&'b [u8]> for &'a str {
+impl<'b> Compare<&'b str> for &str {
+  #[inline(always)]
+  fn compare(&self, t: &'b str) -> CompareResult {
+    (*self).compare(t)
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    (*self).compare_no_case(t)
+  }
+}
+
+impl<'b> Compare<&'b [u8]> for str {
   #[inline(always)]
   fn compare(&self, t: &'b [u8]) -> CompareResult {
     AsBytes::as_bytes(self).compare(t)
@@ -970,57 +1008,122 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a str {
   }
 }
 
+impl<'b> Compare<&'b [u8]> for &str {
+  #[inline(always)]
+  fn compare(&self, t: &'b [u8]) -> CompareResult {
+    (*self).compare(t)
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
+    (*self).compare_no_case(t)
+  }
+}
+
 /// Look for a token in self
 pub trait FindToken<T> {
   /// Returns true if self contains the token
   fn find_token(&self, token: T) -> bool;
 }
 
-impl<'a> FindToken<u8> for &'a [u8] {
+impl FindToken<u8> for [u8] {
   fn find_token(&self, token: u8) -> bool {
     memchr::memchr(token, self).is_some()
   }
 }
 
-impl<'a> FindToken<u8> for &'a str {
+impl FindToken<u8> for &[u8] {
+  #[inline(always)]
+  fn find_token(&self, token: u8) -> bool {
+    (*self).find_token(token)
+  }
+}
+
+impl FindToken<u8> for str {
+  #[inline(always)]
   fn find_token(&self, token: u8) -> bool {
     self.as_bytes().find_token(token)
   }
 }
 
-impl<'a, 'b> FindToken<&'a u8> for &'b [u8] {
+impl FindToken<u8> for &str {
+  #[inline(always)]
+  fn find_token(&self, token: u8) -> bool {
+    (*self).find_token(token)
+  }
+}
+
+impl FindToken<&u8> for [u8] {
+  #[inline(always)]
   fn find_token(&self, token: &u8) -> bool {
     self.find_token(*token)
   }
 }
 
-impl<'a, 'b> FindToken<&'a u8> for &'b str {
+impl FindToken<&u8> for &[u8] {
+  #[inline(always)]
+  fn find_token(&self, token: &u8) -> bool {
+    (*self).find_token(*token)
+  }
+}
+
+impl FindToken<&u8> for str {
+  #[inline(always)]
   fn find_token(&self, token: &u8) -> bool {
     self.as_bytes().find_token(token)
   }
 }
 
-impl<'a> FindToken<char> for &'a [u8] {
+impl FindToken<&u8> for &str {
+  #[inline(always)]
+  fn find_token(&self, token: &u8) -> bool {
+    (*self).find_token(*token)
+  }
+}
+
+impl FindToken<char> for [u8] {
   fn find_token(&self, token: char) -> bool {
     self.iter().any(|i| *i == token as u8)
   }
 }
 
-impl<'a> FindToken<char> for &'a str {
+impl FindToken<char> for &[u8] {
+  #[inline(always)]
+  fn find_token(&self, token: char) -> bool {
+    (*self).find_token(token)
+  }
+}
+
+impl FindToken<char> for str {
   fn find_token(&self, token: char) -> bool {
     self.chars().any(|i| i == token)
   }
 }
 
-impl<'a> FindToken<char> for &'a [char] {
+impl FindToken<char> for &str {
+  #[inline(always)]
+  fn find_token(&self, token: char) -> bool {
+    (*self).find_token(token)
+  }
+}
+
+impl FindToken<char> for [char] {
   fn find_token(&self, token: char) -> bool {
     self.iter().any(|i| *i == token)
   }
 }
 
-impl<'a, 'b> FindToken<&'a char> for &'b [char] {
+impl FindToken<char> for &[char] {
+  #[inline(always)]
+  fn find_token(&self, token: char) -> bool {
+    (*self).find_token(token)
+  }
+}
+
+impl FindToken<&char> for &[char] {
+  #[inline(always)]
   fn find_token(&self, token: &char) -> bool {
-    self.find_token(*token)
+    (*self).find_token(*token)
   }
 }
 
@@ -1030,8 +1133,8 @@ pub trait FindSubstring<T> {
   fn find_substring(&self, substr: T) -> Option<usize>;
 }
 
-impl<'a, 'b> FindSubstring<&'b [u8]> for &'a [u8] {
-  fn find_substring(&self, substr: &'b [u8]) -> Option<usize> {
+impl<'a> FindSubstring<&'a [u8]> for [u8] {
+  fn find_substring(&self, substr: &'a [u8]) -> Option<usize> {
     if substr.len() > self.len() {
       return None;
     }
@@ -1064,16 +1167,37 @@ impl<'a, 'b> FindSubstring<&'b [u8]> for &'a [u8] {
   }
 }
 
-impl<'a, 'b> FindSubstring<&'b str> for &'a [u8] {
-  fn find_substring(&self, substr: &'b str) -> Option<usize> {
+impl<'a> FindSubstring<&'a [u8]> for &[u8] {
+  #[inline(always)]
+  fn find_substring(&self, substr: &'a [u8]) -> Option<usize> {
+    (*self).find_substring(substr)
+  }
+}
+
+impl<'a> FindSubstring<&'a str> for [u8] {
+  fn find_substring(&self, substr: &'a str) -> Option<usize> {
     self.find_substring(AsBytes::as_bytes(substr))
   }
 }
 
-impl<'a, 'b> FindSubstring<&'b str> for &'a str {
+impl<'a> FindSubstring<&'a str> for &[u8] {
+  #[inline(always)]
+  fn find_substring(&self, substr: &'a str) -> Option<usize> {
+    (*self).find_substring(substr)
+  }
+}
+
+impl<'a> FindSubstring<&'a str> for str {
   //returns byte index
-  fn find_substring(&self, substr: &'b str) -> Option<usize> {
+  fn find_substring(&self, substr: &'a str) -> Option<usize> {
     self.find(substr)
+  }
+}
+
+impl<'a> FindSubstring<&'a str> for &str {
+  #[inline(always)]
+  fn find_substring(&self, substr: &'a str) -> Option<usize> {
+    (*self).find_substring(substr)
   }
 }
 
@@ -1084,19 +1208,33 @@ pub trait ParseTo<R> {
   fn parse_to(&self) -> Option<R>;
 }
 
-impl<'a, R: FromStr> ParseTo<R> for &'a [u8] {
+impl<R: FromStr> ParseTo<R> for [u8] {
   fn parse_to(&self) -> Option<R> {
     from_utf8(self).ok().and_then(|s| s.parse().ok())
   }
 }
 
-impl<'a, R: FromStr> ParseTo<R> for &'a str {
+impl<R: FromStr> ParseTo<R> for &[u8] {
+  #[inline(always)]
+  fn parse_to(&self) -> Option<R> {
+    (*self).parse_to()
+  }
+}
+
+impl<R: FromStr> ParseTo<R> for str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()
   }
 }
 
-impl<'a, const N: usize> Compare<[u8; N]> for &'a [u8] {
+impl<R: FromStr> ParseTo<R> for &str {
+  #[inline(always)]
+  fn parse_to(&self) -> Option<R> {
+    (*self).parse_to()
+  }
+}
+
+impl<const N: usize> Compare<[u8; N]> for [u8] {
   #[inline(always)]
   fn compare(&self, t: [u8; N]) -> CompareResult {
     self.compare(&t[..])
@@ -1108,15 +1246,39 @@ impl<'a, const N: usize> Compare<[u8; N]> for &'a [u8] {
   }
 }
 
-impl<'a, 'b, const N: usize> Compare<&'b [u8; N]> for &'a [u8] {
+impl<const N: usize> Compare<[u8; N]> for &[u8] {
   #[inline(always)]
-  fn compare(&self, t: &'b [u8; N]) -> CompareResult {
+  fn compare(&self, t: [u8; N]) -> CompareResult {
+    (*self).compare(t)
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: [u8; N]) -> CompareResult {
+    (*self).compare_no_case(t)
+  }
+}
+
+impl<'a, const N: usize> Compare<&'a [u8; N]> for [u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'a [u8; N]) -> CompareResult {
     self.compare(&t[..])
   }
 
   #[inline(always)]
-  fn compare_no_case(&self, t: &'b [u8; N]) -> CompareResult {
+  fn compare_no_case(&self, t: &'a [u8; N]) -> CompareResult {
     self.compare_no_case(&t[..])
+  }
+}
+
+impl<'a, const N: usize> Compare<&'a [u8; N]> for &[u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'a [u8; N]) -> CompareResult {
+    (*self).compare(t)
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'a [u8; N]) -> CompareResult {
+    (*self).compare_no_case(t)
   }
 }
 
@@ -1126,7 +1288,7 @@ impl<const N: usize> FindToken<u8> for [u8; N] {
   }
 }
 
-impl<'a, const N: usize> FindToken<&'a u8> for [u8; N] {
+impl<const N: usize> FindToken<&u8> for [u8; N] {
   fn find_token(&self, token: &u8) -> bool {
     self.find_token(*token)
   }
@@ -1412,11 +1574,11 @@ pub trait NomRange<Idx> {
   /// The bounded iterator type.
   type Bounded: Iterator<Item = Idx>;
 
-  /// `true` if `item` is contained in the range.
-  fn contains(&self, item: &Idx) -> bool;
-
   /// Returns the bounds of this range.
   fn bounds(&self) -> (Bound<Idx>, Bound<Idx>);
+
+  /// `true` if `item` is contained in the range.
+  fn contains(&self, item: &Idx) -> bool;
 
   /// `true` if the range is inverted.
   fn is_inverted(&self) -> bool;
@@ -1624,6 +1786,74 @@ impl NomRange<usize> for usize {
     0..*self
   }
 }
+
+/// Associates an unsigned integer type with its signed counterpart
+pub trait HasIntCounterpart {
+  /// The type of the signed integer counterpart
+  type Int: HasUintCounterpart;
+
+  /// Bit-wise conversion from the signed integer counterpart
+  fn from_int(value: Self::Int) -> Self;
+}
+
+/// Associates a signed integer type with its unsigned counterpart
+pub trait HasUintCounterpart {
+  /// The type of the unsigned integer counterpart
+  type Uint: HasIntCounterpart;
+
+  /// Bit-wise conversion from the unsigned integer counterpart
+  fn from_uint(value: Self::Uint) -> Self;
+}
+
+macro_rules! impl_has_counterpart {
+  ($($int:ident $uint:ident)*) => {
+    $(
+      impl HasUintCounterpart for $int {
+        type Uint = $uint;
+
+        #[inline(always)]
+        fn from_uint(value: Self::Uint) -> Self {
+          value as Self
+        }
+      }
+
+      impl HasIntCounterpart for $uint {
+        type Int = $int;
+
+        #[inline(always)]
+        fn from_int(value: Self::Int) -> Self {
+          value as Self
+        }
+      }
+    )*
+  };
+}
+impl_has_counterpart!(i8 u8 i16 u16 i32 u32 i64 u64 i128 u128 isize usize);
+
+/// Provides a bit-wise conversion from an unsigned integer to a floating point number.
+pub trait FloatBits {
+  /// Corresponding floating point number type.
+  type Float;
+
+  /// Converts an unsigned integer to a floating point number bit-wise.
+  fn into_float(self) -> Self::Float;
+}
+
+macro_rules! impl_float_bits {
+  ($($uint:ident $float:ident)*) => {
+    $(
+      impl FloatBits for $uint {
+        type Float = $float;
+
+        #[inline(always)]
+        fn into_float(self) -> Self::Float {
+          $float::from_bits(self)
+        }
+      }
+    )*
+  };
+}
+impl_float_bits!(u32 f32 u64 f64);
 
 #[cfg(test)]
 mod tests {

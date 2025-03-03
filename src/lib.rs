@@ -1,6 +1,6 @@
 //! # nom, eating data byte by byte
 //!
-//! nom is a parser combinator library with a focus on safe parsing,
+//! `nom` is a parser combinator library with a focus on safe parsing,
 //! streaming patterns, and as much as possible zero copy.
 //!
 //! ## Example
@@ -66,7 +66,7 @@
 //!
 //! ## Parser combinators
 //!
-//! Parser combinators are an approach to parsers that is very different from
+//! "Parser combinators" is an approach to parsers that is very different from
 //! software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and
 //! [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar
 //! in a separate syntax and generating the corresponding code, you use very small
@@ -74,7 +74,7 @@
 //! word 'HTTP'", and assemble them in meaningful patterns like "recognize
 //! 'HTTP', then a space, then a version".
 //! The resulting code is small, and looks like the grammar you would have
-//! written with other parser approaches.
+//! written with another parser approaches.
 //!
 //! This gives us a few advantages:
 //!
@@ -148,7 +148,7 @@
 //! fn parser(input: I) -> IResult<I, O>;
 //! ```
 //!
-//! `IResult` is an alias for the `Result` type:
+//! [`IResult`] is an alias for the [`Result`] type:
 //!
 //! ```rust
 //! use nom::{Needed, error::Error};
@@ -174,12 +174,12 @@
 //!
 //! ## Making new parsers with function combinators
 //!
-//! nom is based on functions that generate parsers, with a signature like
+//! `nom` is based on functions that generate parsers, with a signature like
 //! this: `(arguments) -> impl Fn(Input) -> IResult<Input, Output, Error>`.
-//! The arguments of a combinator can be direct values (like `take` which uses
+//! The arguments of a combinator can be direct values (like [`take`](crate::bytes::take) which uses
 //! a number of bytes or character as argument) or even other parsers (like
-//! `delimited` which takes as argument 3 parsers, and returns the result of
-//! the second one if all are successful).
+//! [`delimited`](crate::sequence::delimited),
+//! which takes as argument 3 parsers, and returns the result of the second one if all are successful).
 //!
 //! Here are some examples:
 //!
@@ -197,7 +197,7 @@
 //!
 //! ## Combining parsers
 //!
-//! There are higher level patterns, like the **`alt`** combinator, which
+//! There are higher level patterns, like the [`alt`](crate::branch::alt) combinator, which
 //! provides a choice between multiple parsers. If one branch fails, it tries
 //! the next, and returns the result of the first parser that succeeds:
 //!
@@ -213,8 +213,8 @@
 //! assert_eq!(alt_tags.parse(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
 //! ```
 //!
-//! The **`opt`** combinator makes a parser optional. If the child parser returns
-//! an error, **`opt`** will still succeed and return None:
+//! The [`opt`](crate::combinator::opt) combinator makes a parser optional. If the child parser returns
+//! an error, [`opt`](crate::combinator::opt) will still succeed and return None:
 //!
 //! ```rust
 //! use nom::{IResult, Parser, combinator::opt, bytes::complete::tag};
@@ -226,7 +226,7 @@
 //! assert_eq!(abcd_opt(&b"efghxxx"[..]), Ok((&b"efghxxx"[..], None)));
 //! ```
 //!
-//! **`many0`** applies a parser 0 or more times, and returns a vector of the aggregated results:
+//! [`many0`](crate::multi::many0) applies a parser 0 or more times, and returns a vector of the aggregated results:
 //!
 //! ```rust
 //! # #[cfg(feature = "alloc")]
@@ -251,9 +251,9 @@
 //!
 //! Here are some basic combinators available:
 //!
-//! - **`opt`**: Will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
-//! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
-//! - **`many1`**: Will apply the parser 1 or more times
+//! - [`opt`](crate::combinator::opt): Will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
+//! - [`many0`](crate::multi::many0): Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
+//! - [`many1`](crate::multi::many1): Will apply the parser 1 or more times
 //!
 //! There are more complex (and more useful) parsers like tuples, which are
 //! used to apply a series of parsers then assemble their results.
@@ -320,11 +320,11 @@
 //! Some of nom's modules have `streaming` or `complete` submodules. They hold
 //! different variants of the same combinators.
 //!
-//! A streaming parser assumes that we might not have all of the input data.
+//! A streaming parser assumes that we might not have all the input data.
 //! This can happen with some network protocol or large file parsers, where the
 //! input buffer can be full and need to be resized or refilled.
 //!
-//! A complete parser assumes that we already have all of the input data.
+//! A complete parser assumes that we already have all the input data.
 //! This will be the common case with small files that can be read entirely to
 //! memory.
 //!
@@ -365,7 +365,7 @@
 //! assert_eq!(alpha0_streaming("abcd;"), Ok((";", "abcd")));
 //! assert_eq!(alpha0_complete("abcd;"), Ok((";", "abcd")));
 //!
-//! // but when there's no limit, the streaming version returns `Incomplete`, because it cannot
+//! // But when there's no limit, the streaming version returns `Incomplete`, because it cannot
 //! // know if more input data should be recognized. The whole input could be "abcd;", or
 //! // "abcde;"
 //! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::new(1))));
@@ -374,7 +374,7 @@
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
 //! **Going further:** Read the [guides](https://github.com/rust-bakery/nom/tree/main/doc),
-//! check out the [recipes]!
+//! check out the [`recipes`]!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![allow(clippy::doc_markdown)]

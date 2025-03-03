@@ -5,7 +5,7 @@ mod tests;
 
 use core::marker::PhantomData;
 
-use crate::bytes::take;
+use crate::bytes::{take, Take};
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, Needed, Parser};
@@ -13,13 +13,13 @@ use crate::lib::std::num::NonZeroUsize;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 use crate::traits::ToUsize;
-use crate::Check;
 use crate::Emit;
 use crate::Input;
 use crate::Mode;
 use crate::NomRange;
 use crate::OutputM;
 use crate::OutputMode;
+use crate::{Check, FlatMap};
 
 /// Don't pre-allocate more than 64KiB when calling `Vec::with_capacity`.
 ///
@@ -44,6 +44,7 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 /// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
 /// return an error, to prevent going into an infinite loop
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many0;
@@ -60,9 +61,7 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many0<I, F>(
-  f: F,
-) -> Many0<F>
+pub fn many0<I, F>(f: F) -> Many0<F>
 where
   I: Clone + Input,
   F: Parser<I>,
@@ -82,14 +81,14 @@ where
   I: Clone + Input,
   F: Parser<I>,
 {
-  type Output = crate::lib::std::vec::Vec<<F as Parser<I>>::Output>;
+  type Output = Vec<<F as Parser<I>>::Output>;
   type Error = <F as Parser<I>>::Error;
 
   fn process<OM: OutputMode>(
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut acc = OM::Output::bind(|| crate::lib::std::vec::Vec::with_capacity(4));
+    let mut acc = OM::Output::bind(|| Vec::with_capacity(4));
     loop {
       let len = i.input_len();
       match self
@@ -121,8 +120,9 @@ where
 
 /// Runs the embedded parser, gathering the results in a `Vec`.
 ///
-/// This stops on [`Err::Error`] if there is at least one result,  and returns the results that were accumulated. To instead chain an error up,
-/// see [`cut`][crate::combinator::cut].
+/// This stops on [`Err::Error`] if there is at least one result,
+/// and returns the results that were accumulated.
+/// To instead chain an error up, see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
 /// * `f` The parser to apply.
@@ -131,6 +131,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::many1;
@@ -147,9 +148,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many1<I, F>(
-  parser: F,
-) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = <F as Parser<I>>::Error>
+pub fn many1<I, F>(parser: F) -> Many1<F>
 where
   I: Clone + Input,
   F: Parser<I>,
@@ -158,7 +157,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-/// Parser implementation for the [many1] combinator
+/// Parser implementation for the [`many1`] combinator
 pub struct Many1<F> {
   parser: F,
 }
@@ -187,7 +186,7 @@ where
       Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
       Ok((i1, o)) => {
         let mut acc = OM::Output::map(o, |o| {
-          let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
+          let mut acc = Vec::with_capacity(4);
           acc.push(o);
           acc
         });
@@ -231,6 +230,7 @@ where
 ///
 /// `f` keeps going so long as `g` produces [`Err::Error`]. To instead chain an error up, see [`cut`][crate::combinator::cut].
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::many_till;
@@ -248,10 +248,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many_till<I, E, F, G>(
-  f: F,
-  g: G,
-) -> impl Parser<I, Output = (Vec<<F as Parser<I>>::Output>, <G as Parser<I>>::Output), Error = E>
+pub fn many_till<I, E, F, G>(f: F, g: G) -> ManyTill<F, G, E>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -266,7 +263,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-/// Parser implementation for the [many_till] combinator
+/// Parser implementation for the [`many_till`] combinator
 pub struct ManyTill<F, G, E> {
   f: F,
   g: G,
@@ -288,7 +285,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
+    let mut res = OM::Output::bind(Vec::new);
     loop {
       let len = i.input_len();
       match self
@@ -331,13 +328,14 @@ where
 
 /// Alternates between two parsers to produce a list of elements.
 ///
-/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
-/// [`cut`][crate::combinator::cut].
+/// This stops when either parser returns [`Err::Error`] and returns the results that were accumulated.
+/// To instead chain an error up, see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
 /// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::separated_list0;
@@ -355,10 +353,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list0<I, E, F, G>(
-  sep: G,
-  f: F,
-) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
+pub fn separated_list0<I, E, F, G>(sep: G, f: F) -> SeparatedList0<F, G>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -372,7 +367,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-/// Parser implementation for the [separated_list0] combinator
+/// Parser implementation for the [`separated_list0`] combinator
 pub struct SeparatedList0<F, G> {
   parser: F,
   separator: G,
@@ -392,7 +387,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
+    let mut res = OM::Output::bind(Vec::new);
 
     match self
       .parser
@@ -453,12 +448,14 @@ where
 ///
 /// Fails if the element parser does not produce at least one element.
 ///
-/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
-/// [`cut`][crate::combinator::cut].
+/// This stops when either parser returns [`Err::Error`] and returns the results that were accumulated.
+/// To instead chain an error up, see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
 /// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
+///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::separated_list1;
@@ -476,10 +473,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list1<I, E, F, G>(
-  separator: G,
-  parser: F,
-) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
+pub fn separated_list1<I, E, F, G>(separator: G, parser: F) -> SeparatedList1<F, G>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -490,7 +484,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-/// Parser implementation for the [separated_list1] combinator
+/// Parser implementation for the [`separated_list1`] combinator
 pub struct SeparatedList1<F, G> {
   parser: F,
   separator: G,
@@ -510,7 +504,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
+    let mut res = OM::Output::bind(Vec::new);
 
     match self.parser.process::<OM>(i.clone()) {
       Err(e) => return Err(e),
@@ -563,8 +557,9 @@ where
 
 /// Repeats the embedded parser `m..=n` times
 ///
-/// This stops before `n` when the parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
-/// [`cut`][crate::combinator::cut].
+/// This stops before `n` when the parser returns [`Err::Error`]
+/// and returns the results that were accumulated.
+/// To instead chain an error up, see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
 /// * `m` The minimum number of iterations.
@@ -575,6 +570,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many_m_n;
@@ -592,11 +588,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many_m_n<I, E, F>(
-  min: usize,
-  max: usize,
-  parser: F,
-) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
+pub fn many_m_n<I, E, F>(min: usize, max: usize, parser: F) -> ManyMN<F>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -606,7 +598,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-/// Parser implementation for the [many_m_n] combinator
+/// Parser implementation for the [`many_m_n`] combinator
 pub struct ManyMN<F> {
   parser: F,
   min: usize,
@@ -633,11 +625,9 @@ where
       )));
     }
 
-    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES
-      / crate::lib::std::mem::size_of::<<F as Parser<I>>::Output>().max(1);
-    let mut res = OM::Output::bind(|| {
-      crate::lib::std::vec::Vec::with_capacity(self.min.min(max_initial_capacity))
-    });
+    let max_initial_capacity =
+      MAX_INITIAL_CAPACITY_BYTES / size_of::<<F as Parser<I>>::Output>().max(1);
+    let mut res = OM::Output::bind(|| Vec::with_capacity(self.min.min(max_initial_capacity)));
     for count in 0..self.max {
       let len = input.input_len();
       match self.parser.process::<OM>(input.clone()) {
@@ -656,12 +646,12 @@ where
           input = tail;
         }
         Err(Err::Error(e)) => {
-          if count < self.min {
-            return Err(Err::Error(OM::Error::map(e, |e| {
+          return if count < self.min {
+            Err(Err::Error(OM::Error::map(e, |e| {
               <F as Parser<I>>::Error::append(input, ErrorKind::ManyMN, e)
-            })));
+            })))
           } else {
-            return Ok((input, res));
+            Ok((input, res))
           }
         }
         Err(e) => {
@@ -685,6 +675,7 @@ where
 /// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
 /// return an error, to prevent going into an infinite loop
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many0_count;
@@ -699,7 +690,7 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", 0)));
 /// assert_eq!(parser(""), Ok(("", 0)));
 /// ```
-pub fn many0_count<I, E, F>(parser: F) -> impl Parser<I, Output = usize, Error = E>
+pub fn many0_count<I, E, F>(parser: F) -> Many0Count<F>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -708,7 +699,7 @@ where
   Many0Count { parser }
 }
 
-/// Parser implementation for the [many0_count] combinator
+/// Parser implementation for the [`many0_count`] combinator
 pub struct Many0Count<F> {
   parser: F,
 }
@@ -766,6 +757,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::many1_count;
@@ -780,7 +772,7 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1Count))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1Count))));
 /// ```
-pub fn many1_count<I, E, F>(parser: F) -> impl Parser<I, Output = usize, Error = E>
+pub fn many1_count<I, E, F>(parser: F) -> Many1Count<F>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -789,7 +781,7 @@ where
   Many1Count { parser }
 }
 
-/// Parser implementation for the [many1_count] combinator
+/// Parser implementation for the [`many1_count`] combinator
 pub struct Many1Count<F> {
   parser: F,
 }
@@ -854,6 +846,8 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `count` How often to apply the parser.
+///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::count;
@@ -871,10 +865,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn count<I, F>(
-  parser: F,
-  count: usize,
-) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = <F as Parser<I>>::Error>
+pub fn count<I, F>(parser: F, count: usize) -> Count<F>
 where
   I: Clone,
   F: Parser<I>,
@@ -883,7 +874,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-/// Parser implementation for the [count] combinator
+/// Parser implementation for the [`count`] combinator
 pub struct Count<F> {
   parser: F,
   count: usize,
@@ -900,11 +891,9 @@ where
 
   fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
     let mut input = i.clone();
-    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES
-      / crate::lib::std::mem::size_of::<<F as Parser<I>>::Output>().max(1);
-    let mut res = OM::Output::bind(|| {
-      crate::lib::std::vec::Vec::with_capacity(self.count.min(max_initial_capacity))
-    });
+    let max_initial_capacity =
+      MAX_INITIAL_CAPACITY_BYTES / size_of::<<F as Parser<I>>::Output>().max(1);
+    let mut res = OM::Output::bind(|| Vec::with_capacity(self.count.min(max_initial_capacity)));
 
     for _ in 0..self.count {
       let input_ = input.clone();
@@ -938,6 +927,8 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `buf` The slice to fill
+///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::fill;
@@ -958,7 +949,7 @@ where
 pub fn fill<'a, I, E, F>(
   parser: F,
   buf: &'a mut [<F as Parser<I>>::Output],
-) -> impl Parser<I, Output = (), Error = E> + 'a
+) -> Fill<'a, F, <F as Parser<I>>::Output>
 where
   I: Clone,
   F: Parser<I, Error = E> + 'a,
@@ -973,7 +964,7 @@ pub struct Fill<'a, F, O> {
   buf: &'a mut [O],
 }
 
-impl<'a, I, F, O> Parser<I> for Fill<'a, F, O>
+impl<I, F, O> Parser<I> for Fill<'_, F, O>
 where
   I: Clone,
   F: Parser<I, Output = O>,
@@ -1020,6 +1011,7 @@ where
 /// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
 /// return an error, to prevent going into an infinite loop
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::fold_many0;
@@ -1041,11 +1033,7 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
-pub fn fold_many0<I, E, F, G, H, R>(
-  parser: F,
-  init: H,
-  g: G,
-) -> impl Parser<I, Output = R, Error = E>
+pub fn fold_many0<I, E, F, G, H, R>(parser: F, init: H, g: G) -> FoldMany0<F, G, H, R>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -1061,7 +1049,7 @@ where
   }
 }
 
-/// Parser implementation for the [fold_many0] combinator
+/// Parser implementation for the [`fold_many0`] combinator
 pub struct FoldMany0<F, G, Init, R> {
   parser: F,
   g: G,
@@ -1124,6 +1112,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::fold_many1;
@@ -1145,11 +1134,7 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
 /// ```
-pub fn fold_many1<I, E, F, G, H, R>(
-  parser: F,
-  init: H,
-  g: G,
-) -> impl Parser<I, Output = R, Error = E>
+pub fn fold_many1<I, E, F, G, H, R>(parser: F, init: H, g: G) -> FoldMany1<F, G, H, R>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -1165,7 +1150,7 @@ where
   }
 }
 
-/// Parser implementation for the [fold_many1] combinator
+/// Parser implementation for the [`fold_many1`] combinator
 pub struct FoldMany1<F, G, Init, R> {
   parser: F,
   g: G,
@@ -1241,6 +1226,7 @@ where
 /// (like `alpha0` or `digit0`), `many1` will return an error,
 /// to prevent going into an infinite loop.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::fold_many_m_n;
@@ -1271,7 +1257,7 @@ pub fn fold_many_m_n<I, E, F, G, H, R>(
   parser: F,
   init: H,
   g: G,
-) -> impl Parser<I, Output = R, Error = E>
+) -> FoldManyMN<F, G, H, R>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -1289,7 +1275,7 @@ where
   }
 }
 
-/// Parser implementation for the [fold_many_m_n] combinator
+/// Parser implementation for the [`fold_many_m_n`] combinator
 pub struct FoldManyMN<F, G, Init, R> {
   parser: F,
   g: G,
@@ -1351,12 +1337,13 @@ where
   }
 }
 
-/// Gets a number from the parser and returns a
-/// subslice of the input of that size.
-/// If the parser returns `Incomplete`,
-/// `length_data` will return an error.
+/// Gets a number from the parser and returns a subslice of the input of that size.
+/// If the parser returns `Incomplete`, `length_data` will return an error.
+///
 /// # Arguments
 /// * `f` The parser to apply.
+///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::number::complete::be_u16;
@@ -1370,24 +1357,28 @@ where
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
 /// ```
-pub fn length_data<I, E, F>(f: F) -> impl Parser<I, Output = I, Error = E>
+pub fn length_data<I, E, F>(f: F) -> LengthData<I, E, F>
 where
   I: Input,
   <F as Parser<I>>::Output: ToUsize,
   F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
-  f.flat_map(|size| take(size))
+  f.flat_map(take)
 }
 
-/// Gets a number from the first parser,
-/// takes a subslice of the input of that size,
+/// Parser implementation for the [`length_data`] combinator
+pub type LengthData<I, E, F> = FlatMap<F, fn(<F as Parser<I>>::Output) -> Take<E>>;
+
+/// Gets a number from the first parser, takes a subslice of the input of that size,
 /// then applies the second parser on that subslice.
-/// If the second parser returns `Incomplete`,
-/// `length_value` will return an error.
+/// If the second parser returns `Incomplete`, `length_value` will return an error.
+///
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `g` The parser to apply on the subslice.
+///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::number::complete::be_u16;
@@ -1402,10 +1393,7 @@ where
 /// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error(Error::new(&b"123"[..], ErrorKind::Tag))));
 /// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
 /// ```
-pub fn length_value<I, E, F, G>(
-  f: F,
-  g: G,
-) -> impl Parser<I, Output = <G as Parser<I>>::Output, Error = E>
+pub fn length_value<I, E, F, G>(f: F, g: G) -> LengthValue<F, G, E>
 where
   I: Clone + Input,
   <F as Parser<I>>::Output: ToUsize,
@@ -1413,11 +1401,6 @@ where
   G: Parser<I, Error = E>,
   E: ParseError<I>,
 {
-  /*f.flat_map(|size| {
-    println!("got size: {size}");
-    take(size)
-  })
-  .and_then(g)*/
   LengthValue {
     length: f,
     parser: g,
@@ -1425,7 +1408,7 @@ where
   }
 }
 
-/// Parser implementation for the [length_value] combinator
+/// Parser implementation for the [`length_value`] combinator
 pub struct LengthValue<F, G, E> {
   length: F,
   parser: G,
@@ -1457,25 +1440,28 @@ where
       .checked_sub(i.input_len())
       .and_then(NonZeroUsize::new)
     {
-      Err(Err::Incomplete(Needed::Size(needed)))
-    } else {
-      let (rest, i) = i.take_split(length);
-      match self.parser.process::<OM>(i.clone()) {
-        Err(Err::Incomplete(_)) => Err(Err::Error(OM::Error::bind(|| {
-          E::from_error_kind(i, ErrorKind::Complete)
-        }))),
-        Err(e) => Err(e),
-        Ok((_, o)) => Ok((rest, o)),
-      }
+      return Err(Err::Incomplete(Needed::Size(needed)));
+    }
+
+    let (rest, i) = i.take_split(length);
+    match self.parser.process::<OM>(i.clone()) {
+      Err(Err::Incomplete(_)) => Err(Err::Error(OM::Error::bind(|| {
+        E::from_error_kind(i, ErrorKind::Complete)
+      }))),
+      Err(e) => Err(e),
+      Ok((_, o)) => Ok((rest, o)),
     }
   }
 }
 
 /// Gets a number from the first parser,
 /// then applies the second parser that many times.
+///
 /// # Arguments
-/// * `f` The parser to apply to obtain the count.
+/// * `f` The parser to apply to get the count.
 /// * `g` The parser to apply repeatedly.
+///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::number::complete::u8;
@@ -1494,10 +1480,7 @@ where
 /// assert_eq!(parser(b"\x03123123123"), Err(Err::Error(Error::new(&b"123123123"[..], ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn length_count<I, E, F, G>(
-  f: F,
-  g: G,
-) -> impl Parser<I, Output = Vec<<G as Parser<I>>::Output>, Error = E>
+pub fn length_count<I, E, F, G>(f: F, g: G) -> LengthCount<F, G, E>
 where
   I: Clone,
   <F as Parser<I>>::Output: ToUsize,
@@ -1513,7 +1496,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-/// Parser implementation for the [length_count] combinator
+/// Parser implementation for the [`length_count`] combinator
 pub struct LengthCount<F, G, E> {
   length: F,
   parser: G,
@@ -1544,11 +1527,9 @@ where
       Ok((i, count)) => {
         let count = count.to_usize();
         let mut input = i.clone();
-        let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES
-          / crate::lib::std::mem::size_of::<<F as Parser<I>>::Output>().max(1);
-        let mut res = OM::Output::bind(|| {
-          crate::lib::std::vec::Vec::with_capacity(count.min(max_initial_capacity))
-        });
+        let max_initial_capacity =
+          MAX_INITIAL_CAPACITY_BYTES / size_of::<<F as Parser<I>>::Output>().max(1);
+        let mut res = OM::Output::bind(|| Vec::with_capacity(count.min(max_initial_capacity)));
 
         for _ in 0..count {
           let input_ = input.clone();
@@ -1565,9 +1546,7 @@ where
                 <F as Parser<I>>::Error::append(i, ErrorKind::Count, e)
               })));
             }
-            Err(e) => {
-              return Err(e);
-            }
+            Err(e) => return Err(e),
           }
         }
 
@@ -1578,14 +1557,16 @@ where
 }
 
 /// Repeats the embedded parser and collects the results in a type implementing `Extend + Default`.
-/// Fails if the amount of time the embedded parser is run is not
-/// within the specified range.
+/// Fails if the amount of time the embedded parser is run is not within the specified range.
+///
 /// # Arguments
 /// * `range` Constrains the number of iterations.
 ///   * A range without an upper bound `a..` is equivalent to a range of `a..=usize::MAX`.
 ///   * A single `usize` value is equivalent to `value..=value`.
 ///   * An empty range is invalid.
 /// * `parse` The parser to apply.
+///
+/// # Examples
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -1662,16 +1643,13 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, E, Collection, F, G>(
-  range: G,
-  parser: F,
-) -> impl Parser<I, Output = Collection, Error = E>
+pub fn many<I, E, Collection, F, R>(range: R, parser: F) -> Many<F, R, Collection>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
   Collection: Extend<<F as Parser<I>>::Output> + Default,
   E: ParseError<I>,
-  G: NomRange<usize>,
+  R: NomRange<usize>,
 {
   Many {
     parser,
@@ -1680,7 +1658,7 @@ where
   }
 }
 
-/// Parser implementation for the [many] combinator
+/// Parser implementation for the [`many`] combinator
 pub struct Many<F, R, Collection> {
   parser: F,
   range: R,
@@ -1728,17 +1706,15 @@ where
           input = tail;
         }
         Err(Err::Error(e)) => {
-          if !self.range.contains(&count) {
-            return Err(Err::Error(OM::Error::map(e, |e| {
+          return if !self.range.contains(&count) {
+            Err(Err::Error(OM::Error::map(e, |e| {
               <F as Parser<I>>::Error::append(input, ErrorKind::Many, e)
-            })));
+            })))
           } else {
-            return Ok((input, res));
+            Ok((input, res))
           }
         }
-        Err(e) => {
-          return Err(e);
-        }
+        Err(e) => return Err(e),
       }
     }
 
@@ -1746,10 +1722,8 @@ where
   }
 }
 
-/// Applies a parser and accumulates the results using a given
-/// function and initial value.
-/// Fails if the amount of time the embedded parser is run is not
-/// within the specified range.
+/// Applies a parser and accumulates the results using a given function and initial value.
+/// Fails if the amount of time the embedded parser is run is not within the specified range.
 ///
 /// # Arguments
 /// * `range` Constrains the number of iterations.
@@ -1760,6 +1734,8 @@ where
 /// * `init` A function returning the initial value.
 /// * `fold` The function that combines a result of `f` with
 ///       the current accumulator.
+///
+/// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
@@ -1784,12 +1760,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold<I, E, F, G, H, J, R>(
-  range: J,
-  parser: F,
-  init: H,
-  fold: G,
-) -> impl Parser<I, Output = R, Error = E>
+pub fn fold<I, E, F, G, H, J, R>(range: J, parser: F, init: H, fold: G) -> Fold<F, G, H, J>
 where
   I: Clone + Input,
   F: Parser<I, Error = E>,
@@ -1806,7 +1777,7 @@ where
   }
 }
 
-/// Parser implementation for the [fold] combinator
+/// Parser implementation for the [`fold`] combinator
 pub struct Fold<F, G, H, Range> {
   parser: F,
   init: H,

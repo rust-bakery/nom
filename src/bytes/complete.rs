@@ -492,15 +492,13 @@ mod tests {
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
-    let result: IResult<&str, &str> =
-      take_while_m_n(1, 4, |c: char| c.is_alphabetic())("øn");
+    let result: IResult<&str, &str> = take_while_m_n(1, 4, |c: char| c.is_alphabetic())("øn");
     assert_eq!(result, Ok(("", "øn")));
   }
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching_substring() {
-    let result: IResult<&str, &str> =
-      take_while_m_n(1, 1, |c: char| c.is_alphabetic())("øn");
+    let result: IResult<&str, &str> = take_while_m_n(1, 1, |c: char| c.is_alphabetic())("øn");
     assert_eq!(result, Ok(("n", "ø")));
   }
 

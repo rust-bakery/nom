@@ -1,4 +1,4 @@
-//! Parsers recognizing bytes streams
+//! Parsers recognizing byte streams
 
 pub mod complete;
 pub mod streaming;
@@ -7,27 +7,21 @@ mod tests;
 
 use core::marker::PhantomData;
 
-use crate::error::ErrorKind;
-use crate::error::ParseError;
-use crate::internal::{Err, Needed, Parser};
-use crate::lib::std::result::Result::*;
-use crate::traits::{Compare, CompareResult};
-use crate::AsChar;
-use crate::Check;
-use crate::ExtendInto;
-use crate::FindSubstring;
-use crate::FindToken;
-use crate::Input;
-use crate::IsStreaming;
-use crate::Mode;
-use crate::OutputM;
-use crate::OutputMode;
-use crate::ToUsize;
+use crate::{
+  error::ErrorKind,
+  error::ParseError,
+  internal::{Err, Needed, Parser},
+  lib::std::result::Result::*,
+  traits::{Compare, CompareResult, Offset},
+  AsChar, Check, ExtendInto, FindSubstring, FindToken, Input, IsStreaming, Mode, OutputM,
+  OutputMode, ToUsize,
+};
 
 /// Recognizes a pattern.
 ///
 /// The input data will be compared to the tag combinator's argument and will return the part of
 /// the input that matches the argument.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
@@ -92,10 +86,11 @@ where
   }
 }
 
-/// Recognizes a case insensitive pattern.
+/// Recognizes a case-insensitive pattern.
 ///
 /// The input data will be compared to the tag combinator's argument and will return the part of
 /// the input that matches the argument with no regard to case.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
@@ -178,17 +173,19 @@ where
 
   #[inline(always)]
   fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    i.split_at_position_mode::<OM, _, _>(|c| (self.predicate)(c))
+    i.split_at_position_mode::<OM, _, _>(&self.predicate)
   }
 }
 
 /// Parse till certain characters are met.
 ///
-/// The parser will return the longest slice till one of the characters of the combinator's argument are met.
+/// The parser will return the longest slice
+/// till one of the characters of the combinator's argument is met.
 ///
 /// It doesn't consume the matched character.
 ///
 /// It will return a `Err::Error(("", ErrorKind::IsNot))` if the pattern wasn't met.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
@@ -241,6 +238,7 @@ where
 /// combinator's argument.
 ///
 /// It will return a `Err(Err::Error((_, ErrorKind::IsA)))` if the pattern wasn't met.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
@@ -292,6 +290,7 @@ where
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
 /// takes the input and returns a bool)*.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -346,7 +345,7 @@ where
 ///
 /// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met.
 ///
-/// # Streaming Specific
+/// # Streaming-Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` or if the pattern reaches the end of the input.
 ///
 /// # Example
@@ -395,14 +394,16 @@ where
   }
 }
 
-/// Returns the longest (m <= len <= n) input slice  that matches the predicate.
+/// Returns the longest (`m <= len <= n`) input slice that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
 /// takes the input and returns a bool)*.
 ///
 /// It will return an `Err::Error((_, ErrorKind::TakeWhileMN))` if the pattern wasn't met.
-/// # Streaming Specific
-/// *Streaming version* will return a `Err::Incomplete(Needed::new(1))`  if the pattern reaches the end of the input or is too short.
+///
+/// # Streaming-Specific
+/// *Streaming version* will return a `Err::Incomplete(Needed::new(1))`
+/// if the pattern reaches the end of the input or is too short.
 ///
 /// # Example
 /// ```rust
@@ -467,16 +468,16 @@ where
       }
 
       if !(self.predicate)(item) {
-        if i >= self.m {
-          return Ok((
+        return if i >= self.m {
+          Ok((
             input.take_from(index),
             OM::Output::bind(|| input.take(index)),
-          ));
+          ))
         } else {
-          return Err(Err::Error(OM::Error::bind(|| {
+          Err(Err::Error(OM::Error::bind(|| {
             Error::from_error_kind(input, ErrorKind::TakeWhileMN)
-          })));
-        }
+          })))
+        };
       }
       count += 1;
     }
@@ -506,6 +507,7 @@ where
 ///
 /// The parser will return the longest slice till the given predicate *(a function that
 /// takes the input and returns a bool)*.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -536,10 +538,12 @@ where
 /// The parser will return the longest slice till the given predicate *(a function that
 /// takes the input and returns a bool)*.
 ///
-/// # Streaming Specific
+/// # Streaming-Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` if the match reaches the
-/// end of input or if there was not match.
+/// end of input or if there was no match.
+///
 /// # Example
+///
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::take_till1;
@@ -585,13 +589,13 @@ where
   }
 }
 
-/// Returns an input slice containing the first N input elements (Input[..N]).
+/// Returns an input slice containing the first N input elements (`input[..N]`).
 ///
-/// # Streaming Specific
-/// *Streaming version* if the input has less than N elements, `take` will
+/// # Streaming-Specific
+/// *Streaming version* if the input has fewer than N elements, `take` will
 /// return a `Err::Incomplete(Needed::new(M))` where M is the number of
-/// additional bytes the parser would need to succeed.
-/// It is well defined for `&[u8]` as the number of elements is the byte size,
+/// additional bytes, the parser would need to succeed.
+/// It is well-defined for `&[u8]` as the number of elements is the byte size,
 /// but for types like `&str`, we cannot know how many bytes correspond for
 /// the next few chars, so the result will be `Err::Incomplete(Needed::Unknown)`
 ///
@@ -619,7 +623,7 @@ where
   }
 }
 
-/// Parser implementation for [take]
+/// Parser implementation for [`take`]
 pub struct Take<E> {
   length: usize,
   e: PhantomData<E>,
@@ -634,28 +638,24 @@ where
 
   fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
     match i.slice_index(self.length) {
-      Err(needed) => {
-        if OM::Incomplete::is_streaming() {
-          Err(Err::Incomplete(needed))
-        } else {
-          Err(Err::Error(OM::Error::bind(|| {
-            let e: ErrorKind = ErrorKind::Eof;
-            Error::from_error_kind(i, e)
-          })))
-        }
-      }
+      Err(needed) if OM::Incomplete::is_streaming() => Err(Err::Incomplete(needed)),
+      Err(_) => Err(Err::Error(OM::Error::bind(|| {
+        let e: ErrorKind = ErrorKind::Eof;
+        Error::from_error_kind(i, e)
+      }))),
       Ok(index) => Ok((i.take_from(index), OM::Output::bind(|| i.take(index)))),
     }
   }
 }
 
-/// Returns the input slice up to the first occurrence of the pattern.
+/// Returns the slice of input up to the first occurrence of the pattern.
 ///
 /// It doesn't consume the pattern.
 ///
-/// # Streaming Specific
+/// # Streaming-Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(N))` if the input doesn't
 /// contain the pattern or if the input is smaller than the pattern.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -670,7 +670,7 @@ where
 /// assert_eq!(until_eof("hello, worldeo"), Err(Err::Incomplete(Needed::Unknown)));
 /// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// ```
-pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
+pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> TakeUntil<T, Error>
 where
   I: Input + FindSubstring<T>,
   T: Clone,
@@ -681,7 +681,7 @@ where
   }
 }
 
-/// Parser implementation for [take_until]
+/// Parser implementation for [`take_until`]
 pub struct TakeUntil<T, E> {
   tag: T,
   e: PhantomData<E>,
@@ -697,28 +697,24 @@ where
 
   fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
     match i.find_substring(self.tag.clone()) {
-      None => {
-        if OM::Incomplete::is_streaming() {
-          Err(Err::Incomplete(Needed::Unknown))
-        } else {
-          Err(Err::Error(OM::Error::bind(|| {
-            let e: ErrorKind = ErrorKind::TakeUntil;
-            Error::from_error_kind(i, e)
-          })))
-        }
-      }
+      None if OM::Incomplete::is_streaming() => Err(Err::Incomplete(Needed::Unknown)),
+      None => Err(Err::Error(OM::Error::bind(|| {
+        let e: ErrorKind = ErrorKind::TakeUntil;
+        Error::from_error_kind(i, e)
+      }))),
       Some(index) => Ok((i.take_from(index), OM::Output::bind(|| i.take(index)))),
     }
   }
 }
 
-/// Returns the non empty input slice up to the first occurrence of the pattern.
+/// Returns the non-empty slice of input up to the first occurrence of the pattern.
 ///
 /// It doesn't consume the pattern.
 ///
-/// # Streaming Specific
+/// # Streaming-Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(N))` if the input doesn't
 /// contain the pattern or if the input is smaller than the pattern.
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
@@ -734,7 +730,7 @@ where
 /// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// assert_eq!(until_eof("eof"),  Err(Err::Error(Error::new("eof", ErrorKind::TakeUntil))));
 /// ```
-pub fn take_until1<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
+pub fn take_until1<T, I, Error: ParseError<I>>(tag: T) -> TakeUntil1<T, Error>
 where
   I: Input + FindSubstring<T>,
   T: Clone,
@@ -745,7 +741,7 @@ where
   }
 }
 
-/// Parser implementation for take_until1
+/// Parser implementation for [`take_until1`]
 pub struct TakeUntil1<T, E> {
   tag: T,
   e: PhantomData<E>,
@@ -761,16 +757,12 @@ where
 
   fn process<OM: OutputMode>(&mut self, i: I) -> crate::PResult<OM, I, Self::Output, Self::Error> {
     match i.find_substring(self.tag.clone()) {
-      None => {
-        if OM::Incomplete::is_streaming() {
-          Err(Err::Incomplete(Needed::Unknown))
-        } else {
-          Err(Err::Error(OM::Error::bind(|| {
-            let e: ErrorKind = ErrorKind::TakeUntil;
-            Error::from_error_kind(i, e)
-          })))
-        }
-      }
+      None if OM::Incomplete::is_streaming() => Err(Err::Incomplete(Needed::Unknown)),
+      None => Err(Err::Error(OM::Error::bind(|| {
+        let e: ErrorKind = ErrorKind::TakeUntil;
+        Error::from_error_kind(i, e)
+      }))),
+
       Some(0) => Err(Err::Error(OM::Error::bind(|| {
         Error::from_error_kind(i, ErrorKind::TakeUntil)
       }))),
@@ -785,6 +777,7 @@ where
 /// * The first argument matches the normal characters (it must not accept the control character)
 /// * The second argument is the control character (like `\` in most languages)
 /// * The third argument matches the escaped characters
+///
 /// # Example
 /// ```
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -800,14 +793,10 @@ where
 /// assert_eq!(esc("12\\\"34;"), Ok((";", "12\\\"34")));
 /// ```
 ///
-pub fn escaped<I, Error, F, G>(
-  normal: F,
-  control_char: char,
-  escapable: G,
-) -> impl Parser<I, Output = I, Error = Error>
+pub fn escaped<I, Error, F, G>(normal: F, control_char: char, escapable: G) -> Escaped<F, G, Error>
 where
-  I: Input + Clone + crate::traits::Offset,
-  <I as Input>::Item: crate::traits::AsChar,
+  I: Input + Clone + Offset,
+  <I as Input>::Item: AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
@@ -820,7 +809,7 @@ where
   }
 }
 
-/// Parser implementation for [escaped]
+/// Parser implementation for [`escaped`]
 pub struct Escaped<F, G, E> {
   normal: F,
   escapable: G,
@@ -830,8 +819,8 @@ pub struct Escaped<F, G, E> {
 
 impl<I, Error: ParseError<I>, F, G> Parser<I> for Escaped<F, G, Error>
 where
-  I: Input + Clone + crate::traits::Offset,
-  <I as Input>::Item: crate::traits::AsChar,
+  I: Input + Clone + Offset,
+  <I as Input>::Item: AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
@@ -854,15 +843,15 @@ where
       {
         Ok((i2, _)) => {
           if i2.input_len() == 0 {
-            if OM::Incomplete::is_streaming() {
-              return Err(Err::Incomplete(Needed::Unknown));
+            return if OM::Incomplete::is_streaming() {
+              Err(Err::Incomplete(Needed::Unknown))
             } else {
               let index = input.input_len();
-              return Ok((
+              Ok((
                 input.take_from(index),
                 OM::Output::bind(|| input.take(index)),
-              ));
-            }
+              ))
+            };
           } else if i2.input_len() == current_len {
             let index = input.offset(&i2);
             return Ok((
@@ -892,15 +881,15 @@ where
               {
                 Ok((i2, _)) => {
                   if i2.input_len() == 0 {
-                    if OM::Incomplete::is_streaming() {
-                      return Err(Err::Incomplete(Needed::Unknown));
+                    return if OM::Incomplete::is_streaming() {
+                      Err(Err::Incomplete(Needed::Unknown))
                     } else {
                       let index = input.input_len();
-                      return Ok((
+                      Ok((
                         input.take_from(index),
                         OM::Output::bind(|| input.take(index)),
-                      ));
-                    }
+                      ))
+                    };
                   } else {
                     i = i2;
                   }
@@ -910,16 +899,16 @@ where
             }
           } else {
             let index = input.offset(&i);
-            if index == 0 {
-              return Err(Err::Error(OM::Error::bind(|| {
+            return if index == 0 {
+              Err(Err::Error(OM::Error::bind(|| {
                 Error::from_error_kind(input, ErrorKind::Escaped)
-              })));
+              })))
             } else {
-              return Ok((
+              Ok((
                 input.take_from(index),
                 OM::Output::bind(|| input.take(index)),
-              ));
-            }
+              ))
+            };
           }
         }
         Err(Err::Failure(e)) => {
@@ -979,13 +968,13 @@ pub fn escaped_transform<I, Error, F, G, ExtendItem, Output>(
   normal: F,
   control_char: char,
   transform: G,
-) -> impl Parser<I, Output = Output, Error = Error>
+) -> EscapedTransform<F, G, Error, ExtendItem, Output>
 where
-  I: Clone + crate::traits::Offset + Input,
-  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <F as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <G as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <I as Input>::Item: crate::traits::AsChar,
+  I: Clone + Offset + Input,
+  I: ExtendInto<Item = ExtendItem, Extender = Output>,
+  <F as Parser<I>>::Output: ExtendInto<Item = ExtendItem, Extender = Output>,
+  <G as Parser<I>>::Output: ExtendInto<Item = ExtendItem, Extender = Output>,
+  <I as Input>::Item: AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
@@ -1000,7 +989,7 @@ where
   }
 }
 
-/// Parser implementation for [escaped_transform]
+/// Parser implementation for [`escaped_transform`]
 pub struct EscapedTransform<F, G, E, ExtendItem, Output> {
   normal: F,
   transform: G,
@@ -1013,11 +1002,11 @@ pub struct EscapedTransform<F, G, E, ExtendItem, Output> {
 impl<I, Error: ParseError<I>, F, G, ExtendItem, Output> Parser<I>
   for EscapedTransform<F, G, Error, ExtendItem, Output>
 where
-  I: Clone + crate::traits::Offset + Input,
-  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <F as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <G as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <I as Input>::Item: crate::traits::AsChar,
+  I: Clone + Offset + Input,
+  I: ExtendInto<Item = ExtendItem, Extender = Output>,
+  <F as Parser<I>>::Output: ExtendInto<Item = ExtendItem, Extender = Output>,
+  <G as Parser<I>>::Output: ExtendInto<Item = ExtendItem, Extender = Output>,
+  <I as Input>::Item: AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
@@ -1042,12 +1031,12 @@ where
             res
           });
           if i2.input_len() == 0 {
-            if OM::Incomplete::is_streaming() {
-              return Err(Err::Incomplete(Needed::Unknown));
+            return if OM::Incomplete::is_streaming() {
+              Err(Err::Incomplete(Needed::Unknown))
             } else {
               let index = input.input_len();
-              return Ok((input.take_from(index), res));
-            }
+              Ok((input.take_from(index), res))
+            };
           } else if i2.input_len() == current_len {
             return Ok((remainder, res));
           } else {
@@ -1061,13 +1050,13 @@ where
             let input_len = input.input_len();
 
             if next >= input_len {
-              if OM::Incomplete::is_streaming() {
-                return Err(Err::Incomplete(Needed::Unknown));
+              return if OM::Incomplete::is_streaming() {
+                Err(Err::Incomplete(Needed::Unknown))
               } else {
-                return Err(Err::Error(OM::Error::bind(|| {
+                Err(Err::Error(OM::Error::bind(|| {
                   Error::from_error_kind(remainder, ErrorKind::EscapedTransform)
-                })));
-              }
+                })))
+              };
             } else {
               match self.transform.process::<OM>(input.take_from(next)) {
                 Ok((i2, o)) => {
@@ -1076,11 +1065,11 @@ where
                     res
                   });
                   if i2.input_len() == 0 {
-                    if OM::Incomplete::is_streaming() {
-                      return Err(Err::Incomplete(Needed::Unknown));
+                    return if OM::Incomplete::is_streaming() {
+                      Err(Err::Incomplete(Needed::Unknown))
                     } else {
-                      return Ok((input.take_from(input.input_len()), res));
-                    }
+                      Ok((input.take_from(input.input_len()), res))
+                    };
                   } else {
                     index = input.offset(&i2);
                   }
