@@ -256,7 +256,6 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Ok(("", "")));
 /// ```
-#[allow(clippy::redundant_closure)]
 pub fn take_till<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
@@ -288,7 +287,6 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Err(Err::Error(Error::new("", ErrorKind::TakeTill1))));
 /// ```
-#[allow(clippy::redundant_closure)]
 pub fn take_till1<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
@@ -494,15 +492,13 @@ mod tests {
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
-    let result: IResult<&str, &str> =
-      super::take_while_m_n(1, 4, |c: char| c.is_alphabetic())("øn");
+    let result: IResult<&str, &str> = take_while_m_n(1, 4, |c: char| c.is_alphabetic())("øn");
     assert_eq!(result, Ok(("", "øn")));
   }
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching_substring() {
-    let result: IResult<&str, &str> =
-      super::take_while_m_n(1, 1, |c: char| c.is_alphabetic())("øn");
+    let result: IResult<&str, &str> = take_while_m_n(1, 1, |c: char| c.is_alphabetic())("øn");
     assert_eq!(result, Ok(("n", "ø")));
   }
 

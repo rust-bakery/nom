@@ -95,7 +95,7 @@ pub fn is_newline(chr: u8) -> bool {
 /// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn char<I, Error: ParseError<I>>(c: char) -> impl Parser<I, Output = char, Error = Error>
+pub fn char<I, Error: ParseError<I>>(c: char) -> Char<Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
@@ -152,9 +152,7 @@ where
 /// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
 /// ```
-pub fn satisfy<F, I, Error: ParseError<I>>(
-  predicate: F,
-) -> impl Parser<I, Output = char, Error = Error>
+pub fn satisfy<F, I, Error: ParseError<I>>(predicate: F) -> Satisfy<F, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
@@ -162,22 +160,21 @@ where
 {
   Satisfy {
     predicate,
-    make_error: |i: I| Error::from_error_kind(i, ErrorKind::Satisfy),
+    error: PhantomData,
   }
 }
 
-/// Parser implementation for [satisfy]
-pub struct Satisfy<F, MakeError> {
+/// Parser implementation for [`satisfy`]
+pub struct Satisfy<F, E> {
   predicate: F,
-  make_error: MakeError,
+  error: PhantomData<E>,
 }
 
-impl<I, Error: ParseError<I>, F, MakeError> Parser<I> for Satisfy<F, MakeError>
+impl<I, Error: ParseError<I>, F> Parser<I> for Satisfy<F, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
   F: Fn(char) -> bool,
-  MakeError: Fn(I) -> Error,
 {
   type Output = char;
   type Error = Error;
@@ -187,21 +184,40 @@ where
     &mut self,
     i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    match (i).iter_elements().next().map(|t| {
-      let c = t.as_char();
-      let b = (self.predicate)(c);
-      (c, b)
-    }) {
-      None => {
-        if OM::Incomplete::is_streaming() {
-          Err(Err::Incomplete(Needed::Unknown))
-        } else {
-          Err(Err::Error(OM::Error::bind(|| (self.make_error)(i))))
-        }
+    process_satisfy::<OM, _, _, _, _>(i, &self.predicate, |i| {
+      Error::from_error_kind(i, ErrorKind::Satisfy)
+    })
+  }
+}
+
+#[inline(always)]
+fn process_satisfy<OM, I, F, Error, MakeError>(
+  i: I,
+  predicate: F,
+  make_error: MakeError,
+) -> crate::PResult<OM, I, char, Error>
+where
+  OM: crate::OutputMode,
+  I: Input,
+  <I as Input>::Item: AsChar,
+  F: Fn(char) -> bool,
+  Error: ParseError<I>,
+  MakeError: FnOnce(I) -> Error,
+{
+  match i.iter_elements().next().map(|t| {
+    let c = t.as_char();
+    let b = predicate(c);
+    (c, b)
+  }) {
+    None => {
+      if OM::Incomplete::is_streaming() {
+        Err(Err::Incomplete(Needed::Unknown))
+      } else {
+        Err(Err::Error(OM::Error::bind(|| make_error(i))))
       }
-      Some((_, false)) => Err(Err::Error(OM::Error::bind(|| (self.make_error)(i)))),
-      Some((c, true)) => Ok((i.take_from(c.len()), OM::Output::bind(|| c.as_char()))),
     }
+    Some((_, false)) => Err(Err::Error(OM::Error::bind(|| make_error(i)))),
+    Some((c, true)) => Ok((i.take_from(c.len()), OM::Output::bind(|| c.as_char()))),
   }
 }
 
@@ -216,15 +232,43 @@ where
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
 /// ```
-pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> OneOf<T, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
   T: FindToken<char>,
 {
-  Satisfy {
-    predicate: move |c: char| list.find_token(c),
-    make_error: move |i| Error::from_error_kind(i, ErrorKind::OneOf),
+  OneOf {
+    list,
+    error: PhantomData,
+  }
+}
+
+/// Parser implementation for [`one_of`]
+pub struct OneOf<T, E> {
+  list: T,
+  error: PhantomData<E>,
+}
+
+impl<I, T, Error: ParseError<I>> Parser<I> for OneOf<T, Error>
+where
+  I: Input,
+  <I as Input>::Item: AsChar,
+  T: FindToken<char>,
+{
+  type Output = char;
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    process_satisfy::<OM, _, _, _, _>(
+      i,
+      |c| self.list.find_token(c),
+      |i| Error::from_error_kind(i, ErrorKind::OneOf),
+    )
   }
 }
 
@@ -239,19 +283,47 @@ where
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> NoneOf<T, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
   T: FindToken<char>,
 {
-  Satisfy {
-    predicate: move |c: char| !list.find_token(c),
-    make_error: move |i| Error::from_error_kind(i, ErrorKind::NoneOf),
+  NoneOf {
+    list,
+    error: PhantomData,
   }
 }
 
-// Matches one byte as a character. Note that the input type will
+/// Parser implementation for [`none_of`]
+pub struct NoneOf<T, E> {
+  list: T,
+  error: PhantomData<E>,
+}
+
+impl<I, T, Error: ParseError<I>> Parser<I> for NoneOf<T, Error>
+where
+  I: Input,
+  <I as Input>::Item: AsChar,
+  T: FindToken<char>,
+{
+  type Output = char;
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    process_satisfy::<OM, _, _, _, _>(
+      i,
+      |c| !self.list.find_token(c),
+      |i| Error::from_error_kind(i, ErrorKind::NoneOf),
+    )
+  }
+}
+
+/// Matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///
 /// # Example
@@ -312,7 +384,7 @@ where
 /// Recognizes one or more ASCII numerical characters: 0-9
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non digit character).
+/// or if no terminating token is found (a non-digit character).
 /// # Example
 ///
 /// ```
@@ -322,7 +394,7 @@ where
 /// assert_eq!(digit1::<_, (_, ErrorKind)>("c1"), Err(Err::Error(("c1", ErrorKind::Digit))));
 /// assert_eq!(digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn digit1<T, E: ParseError<T>>() -> impl Parser<T, Output = T, Error = E>
+pub fn digit1<T, E: ParseError<T>>() -> Digit1<E>
 where
   T: Input,
   <T as Input>::Item: AsChar,
@@ -330,7 +402,7 @@ where
   Digit1 { e: PhantomData }
 }
 
-/// Parser implementation for [digit1]
+/// Parser implementation for [`digit1`]
 pub struct Digit1<E> {
   e: PhantomData<E>,
 }
@@ -355,7 +427,7 @@ where
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non space character).
+/// or if no terminating token is found (a non-space character).
 /// # Example
 ///
 /// ```
@@ -365,10 +437,10 @@ where
 /// assert_eq!(multispace0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(multispace0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn multispace0<T, E: ParseError<T>>() -> impl Parser<T, Output = T, Error = E>
+pub fn multispace0<I, E: ParseError<I>>() -> MultiSpace0<E>
 where
-  T: Input,
-  <T as Input>::Item: AsChar,
+  I: Input,
+  <I as Input>::Item: AsChar,
 {
   MultiSpace0 { e: PhantomData }
   /*input.split_at_position(|item| {
@@ -377,7 +449,7 @@ where
   })*/
 }
 
-/// Parser implementation for [multispace0()]
+/// Parser implementation for [`multispace0`]
 pub struct MultiSpace0<E> {
   e: PhantomData<E>,
 }

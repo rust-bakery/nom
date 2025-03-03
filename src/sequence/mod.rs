@@ -5,7 +5,7 @@ mod tests;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
-use crate::{Check, OutputM, OutputMode, PResult};
+use crate::{And, Check, OutputM, OutputMode, PResult};
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.
@@ -30,7 +30,7 @@ use crate::{Check, OutputM, OutputMode, PResult};
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
   first: F,
   second: G,
-) -> impl Parser<I, Output = (O1, O2), Error = E>
+) -> And<F, G>
 where
   F: Parser<I, Output = O1, Error = E>,
   G: Parser<I, Output = O2, Error = E>,
@@ -43,8 +43,9 @@ where
 ///
 /// # Arguments
 /// * `first` The opening parser.
-/// * `second` The second parser to get object.
+/// * `second` The second parser to get an object.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
@@ -61,7 +62,7 @@ where
 pub fn preceded<I, O, E: ParseError<I>, F, G>(
   first: F,
   second: G,
-) -> impl Parser<I, Output = O, Error = E>
+) -> Preceded<F, G>
 where
   F: Parser<I, Error = E>,
   G: Parser<I, Output = O, Error = E>,
@@ -72,7 +73,7 @@ where
   }
 }
 
-/// a
+/// Parser implementation for the [`preceded`] combinator
 pub struct Preceded<F, G> {
   f: F,
   g: G,
@@ -102,6 +103,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `first` The first parser to apply.
 /// * `second` The second parser to match an object.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
@@ -118,7 +120,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 pub fn terminated<I, O, E: ParseError<I>, F, G>(
   first: F,
   second: G,
-) -> impl Parser<I, Output = O, Error = E>
+) -> Terminated<F, G>
 where
   F: Parser<I, Output = O, Error = E>,
   G: Parser<I, Error = E>,
@@ -129,7 +131,7 @@ where
   }
 }
 
-/// a
+/// Parser implementation for the [`terminated`] combinator
 pub struct Terminated<F, G> {
   f: F,
   g: G,
@@ -161,6 +163,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `sep` The separator parser to apply.
 /// * `second` The second parser to apply.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
@@ -178,7 +181,7 @@ pub fn separated_pair<I, O1, O2, E: ParseError<I>, F, G, H>(
   first: F,
   sep: G,
   second: H,
-) -> impl Parser<I, Output = (O1, O2), Error = E>
+) -> And<F, Preceded<G, H>>
 where
   F: Parser<I, Output = O1, Error = E>,
   G: Parser<I, Error = E>,
@@ -196,6 +199,7 @@ where
 /// * `second` The second parser to apply.
 /// * `third` The third parser to apply and discard.
 ///
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
@@ -213,7 +217,7 @@ pub fn delimited<I, O, E: ParseError<I>, F, G, H>(
   first: F,
   second: G,
   third: H,
-) -> impl Parser<I, Output = O, Error = E>
+) -> Preceded<F, Terminated<G, H>>
 where
   F: Parser<I, Error = E>,
   G: Parser<I, Output = O, Error = E>,
@@ -303,6 +307,8 @@ impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
 
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
 ///There is a maximum of 21 parsers
+/// 
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::ErrorKind};
 /// use nom::sequence::tuple;

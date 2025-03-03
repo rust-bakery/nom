@@ -4,19 +4,14 @@
 
 use core::marker::PhantomData;
 
-#[cfg(feature = "alloc")]
-use crate::lib::std::boxed::Box;
-
 use crate::error::{ErrorKind, FromExternalError, ParseError};
 use crate::internal::*;
 use crate::lib::std::borrow::Borrow;
 use crate::lib::std::convert::Into;
 #[cfg(feature = "std")]
 use crate::lib::std::fmt::Debug;
-use crate::lib::std::mem::transmute;
-use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::traits::{AsChar, Input, ParseTo};
-use crate::traits::{Compare, CompareResult, Offset};
+use crate::traits::{Compare, Offset};
 
 #[cfg(test)]
 mod tests;
@@ -71,7 +66,7 @@ where
 /// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
 /// # }
 /// ```
-pub fn map<I, O, E: ParseError<I>, F, G>(parser: F, f: G) -> impl Parser<I, Output = O, Error = E>
+pub fn map<I, O, E: ParseError<I>, F, G>(parser: F, f: G) -> Map<F, G>
 where
   F: Parser<I, Error = E>,
   G: FnMut(<F as Parser<I>>::Output) -> O,
@@ -102,7 +97,7 @@ where
 pub fn map_res<I: Clone, O, E: ParseError<I> + FromExternalError<I, E2>, E2, F, G>(
   parser: F,
   f: G,
-) -> impl Parser<I, Output = O, Error = E>
+) -> MapRes<F, G>
 where
   F: Parser<I, Error = E>,
   G: FnMut(<F as Parser<I>>::Output) -> Result<O, E2>,
@@ -110,7 +105,7 @@ where
   parser.map_res(f)
 }
 
-/// Applies a function returning an `Option` over the result of a parser.
+/// Applies a function returning an [`Option`] over the result of a parser.
 ///
 /// ```rust
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
@@ -130,10 +125,7 @@ where
 /// assert_eq!(parse.parse("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
 /// # }
 /// ```
-pub fn map_opt<I: Clone, O, E: ParseError<I>, F, G>(
-  parser: F,
-  f: G,
-) -> impl Parser<I, Output = O, Error = E>
+pub fn map_opt<I: Clone, O, E: ParseError<I>, F, G>(parser: F, f: G) -> MapOpt<F, G>
 where
   F: Parser<I, Error = E>,
   G: FnMut(<F as Parser<I>>::Output) -> Option<O>,
@@ -157,10 +149,7 @@ where
 /// assert_eq!(parse.parse("123"), Err(Err::Error(("123", ErrorKind::Eof))));
 /// # }
 /// ```
-pub fn map_parser<I, O, E: ParseError<I>, F, G>(
-  parser: F,
-  applied_parser: G,
-) -> impl Parser<I, Output = O, Error = E>
+pub fn map_parser<I, O, E: ParseError<I>, F, G>(parser: F, applied_parser: G) -> AndThen<F, G>
 where
   F: Parser<I, Error = E>,
   G: Parser<<F as Parser<I>>::Output, Output = O, Error = E>,
@@ -183,10 +172,7 @@ where
 /// assert_eq!(parse.parse(&[4, 0, 1, 2][..]), Err(Err::Error((&[0, 1, 2][..], ErrorKind::Eof))));
 /// # }
 /// ```
-pub fn flat_map<I, O, E: ParseError<I>, F, G, H>(
-  parser: F,
-  applied_parser: G,
-) -> impl Parser<I, Output = O, Error = E>
+pub fn flat_map<I, O, E: ParseError<I>, F, G, H>(parser: F, applied_parser: G) -> FlatMap<F, G>
 where
   F: Parser<I, Error = E>,
   G: FnMut(<F as Parser<I>>::Output) -> H,
@@ -213,16 +199,14 @@ where
 /// assert_eq!(parser("123;"), Ok(("123;", None)));
 /// # }
 /// ```
-pub fn opt<I: Clone, E: ParseError<I>, F>(
-  f: F,
-) -> impl Parser<I, Output = Option<<F as Parser<I>>::Output>, Error = E>
+pub fn opt<I: Clone, E: ParseError<I>, F>(f: F) -> Opt<F>
 where
   F: Parser<I, Error = E>,
 {
   Opt { parser: f }
 }
 
-/// Parser implementation for [opt]
+/// Parser implementation for [`opt`]
 pub struct Opt<F> {
   parser: F,
 }
@@ -268,10 +252,7 @@ where
 /// assert_eq!(parser(false, "123;"), Ok(("123;", None)));
 /// # }
 /// ```
-pub fn cond<I, E: ParseError<I>, F>(
-  b: bool,
-  f: F,
-) -> impl Parser<I, Output = Option<<F as Parser<I>>::Output>, Error = E>
+pub fn cond<I, E: ParseError<I>, F>(b: bool, f: F) -> Cond<F>
 where
   F: Parser<I, Error = E>,
 {
@@ -280,7 +261,7 @@ where
   }
 }
 
-/// Parser implementation for [cond]
+/// Parser implementation for [`cond`]
 pub struct Cond<F> {
   parser: Option<F>,
 }
@@ -316,16 +297,14 @@ where
 /// assert_eq!(parser.parse("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn peek<I: Clone, F>(
-  parser: F,
-) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = <F as Parser<I>>::Error>
+pub fn peek<I: Clone, F>(parser: F) -> Peek<F>
 where
   F: Parser<I>,
 {
   Peek { parser }
 }
 
-/// Parsr implementation for [peek]
+/// Parser implementation for [`peek`]
 pub struct Peek<F> {
   parser: F,
 }
@@ -347,7 +326,7 @@ where
   }
 }
 
-/// returns its input if it is at the end of input data
+/// Returns its input if it is at the end of input data
 ///
 /// When we're at the end of the data, this combinator
 /// will succeed
@@ -372,7 +351,7 @@ pub fn eof<I: Input + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
   }
 }
 
-/// Transforms Incomplete into `Error`.
+/// Transforms [`Err::Incomplete`] into [`Err::Error`].
 ///
 /// ```rust
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
@@ -386,16 +365,14 @@ pub fn eof<I: Input + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
 /// assert_eq!(parser.parse("abcd"), Err(Err::Error(("abcd", ErrorKind::Complete))));
 /// # }
 /// ```
-pub fn complete<I: Clone, O, E: ParseError<I>, F>(
-  parser: F,
-) -> impl Parser<I, Output = O, Error = E>
+pub fn complete<I: Clone, O, E: ParseError<I>, F>(parser: F) -> MakeComplete<F>
 where
   F: Parser<I, Output = O, Error = E>,
 {
   MakeComplete { parser }
 }
 
-/// Parser implementation for [complete]
+/// Parser implementation for [`complete`]
 pub struct MakeComplete<F> {
   parser: F,
 }
@@ -439,9 +416,7 @@ where
 /// assert_eq!(parser.parse("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn all_consuming<I, E: ParseError<I>, F>(
-  parser: F,
-) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = E>
+pub fn all_consuming<I, E: ParseError<I>, F>(parser: F) -> AllConsuming<F>
 where
   I: Input,
   F: Parser<I, Error = E>,
@@ -449,7 +424,7 @@ where
   AllConsuming { parser }
 }
 
-/// Parser implementation for [all_consuming]
+/// Parser implementation for [`all_consuming`]
 pub struct AllConsuming<F> {
   parser: F,
 }
@@ -492,10 +467,7 @@ where
 /// assert_eq!(parser.parse("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn verify<I: Clone, O2, E: ParseError<I>, F, G>(
-  first: F,
-  second: G,
-) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = E>
+pub fn verify<I: Clone, O2, E: ParseError<I>, F, G>(first: F, second: G) -> Verify<F, G, O2>
 where
   F: Parser<I, Error = E>,
   G: Fn(&O2) -> bool,
@@ -509,7 +481,7 @@ where
   }
 }
 
-/// Parser iplementation for verify
+/// Parser implementation for [`verify`]
 pub struct Verify<F, G, O2: ?Sized> {
   first: F,
   second: G,
@@ -557,14 +529,36 @@ where
 /// assert_eq!(parser.parse("123abcd;"), Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn value<I, O1: Clone, E: ParseError<I>, F>(
-  val: O1,
-  parser: F,
-) -> impl Parser<I, Output = O1, Error = E>
+pub fn value<I, O1: Clone, E: ParseError<I>, F>(val: O1, parser: F) -> Value<O1, F>
 where
   F: Parser<I, Error = E>,
 {
-  parser.map(move |_| val.clone())
+  Value { val, parser }
+}
+
+/// Parser implementation for [`value`]
+pub struct Value<T, F> {
+  val: T,
+  parser: F,
+}
+
+impl<I, F, T, E> Parser<I> for Value<T, F>
+where
+  I: Input,
+  F: Parser<I, Error = E>,
+  T: Clone,
+  E: ParseError<I>,
+{
+  type Output = T;
+  type Error = E;
+
+  #[inline]
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    self
+      .parser
+      .process::<OM>(input)
+      .map(|(i, o)| (i, OM::Output::map(o, |_| self.val.clone())))
+  }
 }
 
 /// Succeeds if the child parser returns an error.
@@ -581,14 +575,14 @@ where
 /// assert_eq!(parser.parse("abcd"), Err(Err::Error(("abcd", ErrorKind::Not))));
 /// # }
 /// ```
-pub fn not<I: Clone, E: ParseError<I>, F>(parser: F) -> impl Parser<I, Output = (), Error = E>
+pub fn not<I: Clone, E: ParseError<I>, F>(parser: F) -> Not<F>
 where
   F: Parser<I, Error = E>,
 {
   Not { parser }
 }
 
-/// Parser implementation for [not]
+/// Parser implementation for [`not`]
 pub struct Not<F> {
   parser: F,
 }
@@ -628,16 +622,14 @@ where
 /// assert_eq!(parser.parse("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
 /// # }
 /// ```
-pub fn recognize<I: Clone + Offset + Input, E: ParseError<I>, F>(
-  parser: F,
-) -> impl Parser<I, Output = I, Error = E>
+pub fn recognize<I: Clone + Offset + Input, E: ParseError<I>, F>(parser: F) -> Recognize<F>
 where
   F: Parser<I, Error = E>,
 {
   Recognize { parser }
 }
 
-/// Parser implementation for [recognize]
+/// Parser implementation for [`recognize`]
 pub struct Recognize<F> {
   parser: F,
 }
@@ -666,11 +658,11 @@ where
   }
 }
 
-/// if the child parser was successful, return the consumed input with the output
-/// as a tuple. Functions similarly to [recognize](fn.recognize.html) except it
-/// returns the parser output as well.
+/// If the child parser was successful, return the consumed input with the output
+/// as a tuple.
+/// Functions similarly to [`recognize`], except it returns the parser output as well.
 ///
-/// This can be useful especially in cases where the output is not the same type
+/// This can be useful, especially in cases where the output is different type
 /// as the input, or the input is a user defined type.
 ///
 /// Returned tuple is of the format `(consumed input, produced output)`.
@@ -687,7 +679,6 @@ where
 /// }
 ///
 /// # fn main() {
-///
 /// let mut consumed_parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
 ///
 /// assert_eq!(consumed_parser.parse("abcd,efgh1"), Ok(("1", ("abcd,efgh", true))));
@@ -703,9 +694,7 @@ where
 /// assert_eq!(recognize_parser.parse("abcd"), consumed_parser.parse("abcd"));
 /// # }
 /// ```
-pub fn consumed<I, F, E>(
-  parser: F,
-) -> impl Parser<I, Output = (I, <F as Parser<I>>::Output), Error = E>
+pub fn consumed<I, F, E>(parser: F) -> Consumed<F>
 where
   I: Clone + Offset + Input,
   E: ParseError<I>,
@@ -714,7 +703,7 @@ where
   Consumed { parser }
 }
 
-/// Parser implementation for [consumed]
+/// Parser implementation for [`consumed`]
 pub struct Consumed<F> {
   parser: F,
 }
@@ -798,16 +787,14 @@ where
 /// assert_eq!(parser("+"), Err(Err::Failure(Error { input: "", code: ErrorKind::Digit })));
 /// # }
 /// ```
-pub fn cut<I, E: ParseError<I>, F>(
-  parser: F,
-) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = E>
+pub fn cut<I, E: ParseError<I>, F>(parser: F) -> Cut<F>
 where
   F: Parser<I, Error = E>,
 {
   Cut { parser }
 }
 
-/// Parser implementation for [cut]
+/// Parser implementation for [`cut`]
 pub struct Cut<F> {
   parser: F,
 }
@@ -856,7 +843,7 @@ where
 /// assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
 /// # }
 /// ```
-pub fn into<I, O1, O2, E1, E2, F>(parser: F) -> impl Parser<I, Output = O2, Error = E2>
+pub fn into<I, O1, O2, E1, E2, F>(parser: F) -> crate::Into<F, O2, E2>
 where
   O2: From<O1>,
   E2: From<E1>,
@@ -899,7 +886,7 @@ where
   }
 }
 
-/// Main structure associated to the [iterator] function.
+/// Main structure associated to the [`iterator`] function.
 pub struct ParserIterator<I, E, F> {
   iterator: F,
   input: I,
@@ -917,7 +904,7 @@ impl<I: Clone, E, F> ParserIterator<I, E, F> {
   }
 }
 
-impl<Input, Output, Error, F> core::iter::Iterator for ParserIterator<Input, Error, F>
+impl<Input, Output, Error, F> Iterator for ParserIterator<Input, Error, F>
 where
   F: Parser<Input, Output = Output, Error = Error>,
   Input: Clone,
@@ -925,30 +912,29 @@ where
   type Item = Output;
 
   fn next(&mut self) -> Option<Self::Item> {
-    if let State::Running = self.state.take().unwrap() {
-      let input = self.input.clone();
+    let State::Running = self.state.take().unwrap() else {
+      return None;
+    };
+    let input = self.input.clone();
 
-      match (self.iterator).parse(input) {
-        Ok((i, o)) => {
-          self.input = i;
-          self.state = Some(State::Running);
-          Some(o)
-        }
-        Err(Err::Error(_)) => {
-          self.state = Some(State::Done);
-          None
-        }
-        Err(Err::Failure(e)) => {
-          self.state = Some(State::Failure(e));
-          None
-        }
-        Err(Err::Incomplete(i)) => {
-          self.state = Some(State::Incomplete(i));
-          None
-        }
+    match self.iterator.parse(input) {
+      Ok((i, o)) => {
+        self.input = i;
+        self.state = Some(State::Running);
+        Some(o)
       }
-    } else {
-      None
+      Err(Err::Error(_)) => {
+        self.state = Some(State::Done);
+        None
+      }
+      Err(Err::Failure(e)) => {
+        self.state = Some(State::Failure(e));
+        None
+      }
+      Err(Err::Incomplete(i)) => {
+        self.state = Some(State::Incomplete(i));
+        None
+      }
     }
   }
 }
@@ -960,9 +946,9 @@ enum State<E> {
   Incomplete(Needed),
 }
 
-/// a parser which always succeeds with given value without consuming any input.
+/// A parser which always succeeds with a given value without consuming any input.
 ///
-/// It can be used for example as the last alternative in `alt` to
+/// It can be used, for example, as the last alternative in [`alt`](crate::branch::alt) to
 /// specify the default case.
 ///
 /// ```rust
@@ -981,14 +967,14 @@ enum State<E> {
 /// assert_eq!(sign.parse("10"), Ok(("10", 1)));
 /// # }
 /// ```
-pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Parser<I, Output = O, Error = E> {
+pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> Success<O, E> {
   Success {
     val,
     e: PhantomData,
   }
 }
 
-/// Parser implementation for [success]
+/// Parser implementation for [`success`]
 pub struct Success<O: Clone, E> {
   val: O,
   e: PhantomData<E>,
@@ -1016,14 +1002,14 @@ where
 /// let s = "string";
 /// assert_eq!(fail::<_, &str, _>().parse(s), Err(Err::Error((s, ErrorKind::Fail))));
 /// ```
-pub fn fail<I, O, E: ParseError<I>>() -> impl Parser<I, Output = O, Error = E> {
+pub fn fail<I, O, E: ParseError<I>>() -> Fail<O, E> {
   Fail {
     o: PhantomData,
     e: PhantomData,
   }
 }
 
-/// Parser implementation for [fail]
+/// Parser implementation for [`fail`]
 pub struct Fail<O, E> {
   o: PhantomData<O>,
   e: PhantomData<E>,

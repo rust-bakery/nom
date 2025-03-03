@@ -1,6 +1,5 @@
 //#![feature(trace_macros)]
 #![allow(dead_code)]
-#![allow(clippy::redundant_closure)]
 
 use nom::{error::ErrorKind, Err, IResult, Needed, Parser};
 
@@ -230,12 +229,12 @@ fn issue_1459_clamp_capacity() {
   // shouldn't panic
   use nom::multi::many_m_n;
   let mut parser = many_m_n::<_, (), _>(usize::MAX, usize::MAX, char('a'));
-  assert_eq!(parser.parse("a"), Err(nom::Err::Error(())));
+  assert_eq!(parser.parse("a"), Err(Err::Error(())));
 
   // shouldn't panic
   use nom::multi::count;
   let mut parser = count(char('a'), usize::MAX);
-  assert_eq!(parser.parse("a"), Err(nom::Err::Error(())));
+  assert_eq!(parser.parse("a"), Err(Err::Error(())));
 }
 
 #[test]

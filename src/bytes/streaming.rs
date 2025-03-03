@@ -269,7 +269,6 @@ where
 /// assert_eq!(till_colon("12345"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(till_colon(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-#[allow(clippy::redundant_closure)]
 pub fn take_till<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
@@ -302,7 +301,6 @@ where
 /// assert_eq!(till_colon("12345"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(till_colon(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-#[allow(clippy::redundant_closure)]
 pub fn take_till1<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,

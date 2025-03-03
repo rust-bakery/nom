@@ -64,10 +64,10 @@ fn is_horizontal_space(c: u8) -> bool {
 }
 
 fn is_version(c: u8) -> bool {
-  c >= b'0' && c <= b'9' || c == b'.'
+  c.is_ascii_digit() || c == b'.'
 }
 
-fn line_ending<'a>()-> impl Parser<&'a[u8], Output=&'a[u8], Error=Error<&'a[u8]>>  {
+fn line_ending<'a>() -> impl Parser<&'a[u8], Output=&'a[u8], Error=Error<&'a[u8]>>  {
   tag("\n").or(tag("\r\n"))
 }
 
