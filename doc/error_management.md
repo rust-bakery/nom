@@ -115,9 +115,9 @@ println!(
 );
 ```
 
-### getting more information: nom::error::VerboseError
+### getting more information: nom-language::error::VerboseError
 
-The  `VerboseError<I>` type accumulates more information about the chain of
+The  `VerboseError<I>` type (available from the companion `nom-language` crate) accumulates more information about the chain of
 parsers that encountered an error:
 
 ```rust
@@ -187,7 +187,7 @@ println!("parsed verbose: {:#?}", json::<VerboseError<&str>>(data));
 ```
 
 But by looking at the original input and the chain of errors, we can build
-a more user friendly error message. The `nom::error::convert_error` function
+a more user friendly error message. The `nom-language::error::convert_error` function
 can build such a message.
 
 ```rust
@@ -232,7 +232,7 @@ information, like line and column.
 
 #### nom-supreme
 
-[nom-supreme](https://docs.rs/nom-supreme) provides the `ErrorTree<I>` error
+[nom-supreme](https://docs.rs/nom-supreme) (not updated yet for `nom8`) provides the `ErrorTree<I>` error
 type, that provides the same chain of parser errors as `VerboseError`, but also
 accumulates errors from the various branches tried by `alt`.
 

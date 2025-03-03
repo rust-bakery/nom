@@ -26,7 +26,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
-| [alt](https://docs.rs/nom/latest/nom/branch/fn.alt.html) | `alt((tag("ab"), tag("cd")))` |  `"cdef"` | `Ok(("ef", "cd"))` |Try a list of parsers and return the result of the first successful one|
+| [alt](https://docs.rs/nom/latest/nom/branch/fn.alt.html) | `alt((tag("ab"), tag("cd")))` |  `"cdef"` | `Ok(("ef", "cd"))` |Try a list of parsers and return the result of the first successful one. All child parsers have the same `Output`.|
 | [permutation](https://docs.rs/nom/latest/nom/branch/fn.permutation.html) | `permutation((tag("ab"), tag("cd"), tag("12")))` | `"cd12abc"` | `Ok(("c", ("ab", "cd", "12"))` |Succeeds when all its child parser have succeeded, whatever the order|
 
 ## Sequence combinators
@@ -38,7 +38,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [terminated](https://docs.rs/nom/latest/nom/sequence/fn.terminated.html) | `terminated(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", "ab"))` |Gets an object from the first parser, then matches an object from the second parser and discards it.|
 | [pair](https://docs.rs/nom/latest/nom/sequence/fn.pair.html) | `pair(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", ("ab", "XY")))` |Gets an object from the first parser, then gets another object from the second parser.|
 | [separated_pair](https://docs.rs/nom/latest/nom/sequence/fn.separated_pair.html) | `separated_pair(tag("hello"), char(','), tag("world"))` | `"hello,world!"` | `Ok(("!", ("hello", "world")))` |Gets an object from the first parser, then matches an object from the sep_parser and discards it, then gets another object from the second parser.|
-| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `tuple((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
+| tuples | `((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | `Parser` is implemented for tuples: it chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
 
 ## Applying a parser multiple times
 
@@ -106,7 +106,7 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 
 - [`escaped`](https://docs.rs/nom/latest/nom/bytes/complete/fn.escaped.html): Matches a byte string with escaped characters
 - [`escaped_transform`](https://docs.rs/nom/latest/nom/bytes/complete/fn.escaped_transform.html): Matches a byte string with escaped characters, and returns a new string with the escaped characters replaced
-- [`precedence`](https://docs.rs/nom/latest/nom/precedence/fn.precedence.html): Parses an expression with regards to operator precedence
+- [`precedence`](https://docs.rs/nom-language/latest/nom_language/precedence/fn.precedence.html) (from `nom-language`): Parses an expression with regards to operator precedence
 
 ## Binary format parsing
 
