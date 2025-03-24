@@ -490,11 +490,11 @@ macro_rules! error_node_position(
 #[cfg(feature = "std")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
 pub fn dbg_dmp<'a, F, O, E: std::fmt::Debug>(
-  f: F,
+  mut f: F,
   context: &'static str,
-) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
+) -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], O, E>
 where
-  F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E>,
+  F: FnMut(&'a [u8]) -> IResult<&'a [u8], O, E>,
 {
   use crate::HexDisplay;
   move |i: &'a [u8]| match f(i) {

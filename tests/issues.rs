@@ -269,3 +269,13 @@ fn issue_1586_parser_iterator_impl() {
 
   assert_eq!(parse_input("123\n456").collect::<Vec<_>>(), vec![123, 456]);
 }
+
+#[test]
+fn issue_1844_take_fnmut_with_dbg_dmp() {
+  use nom::{bytes::complete::take, error::dbg_dmp, IResult};
+  fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    dbg_dmp(take(1usize), "take")(i)
+  }
+
+  assert!(f(&b"00"[..]).is_ok());
+}
