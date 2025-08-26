@@ -5,14 +5,13 @@ use codspeed_criterion_compat::*;
 use nom::{
   branch::alt,
   bytes::{tag, take},
-  character::{anychar, char, multispace0, none_of},
-  combinator::{map, map_opt, map_res, value, verify},
+  character::{char, multispace0, none_of},
+  combinator::{map, map_opt, map_res, success, value, verify},
   error::{Error, ErrorKind, FromExternalError, ParseError},
   multi::{fold, separated_list0},
-  number::double,
-  number::recognize_float,
+  number::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
-  Check, Complete, Emit, IResult, Mode, OutputM, Parser,
+  Check, Complete, Either, Emit, IResult, OutputM, Parser,
 };
 use nom_language::error::VerboseError;
 
@@ -68,69 +67,22 @@ fn character<
   'a,
   E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
 >() -> impl Parser<&'a str, Output = char, Error = E> {
-  Character { e: PhantomData }
-  /*let (input, c) = none_of("\"")(input)?;
-  if c == '\\' {
-    alt((
-      map_res(anychar, |c| {
-        Ok(match c {
-          '"' | '\\' | '/' => c,
-          'b' => '\x08',
-          'f' => '\x0C',
-          'n' => '\n',
-          'r' => '\r',
-          't' => '\t',
-          _ => return Err(()),
-        })
-      }),
-      preceded(char('u'), unicode_escape()),
-    ))
-    .parse(input)
-  } else {
-    Ok((input, c))
-  }*/
-}
-
-struct Character<E> {
-  e: PhantomData<E>,
-}
-
-impl<'a, E> Parser<&'a str> for Character<E>
-where
-  E: ParseError<&'a str>
-    + FromExternalError<&'a str, ParseIntError>
-    + FromExternalError<&'a str, ()>,
-{
-  type Output = char;
-
-  type Error = E;
-
-  fn process<OM: nom::OutputMode>(
-    &mut self,
-    input: &'a str,
-  ) -> nom::PResult<OM, &'a str, Self::Output, Self::Error> {
-    let (input, c): (&str, char) =
-      none_of("\"").process::<OutputM<Emit, OM::Error, OM::Incomplete>>(input)?;
-    if c == '\\' {
-      alt((
-        map_res(anychar, |c| {
-          Ok(match c {
-            '"' | '\\' | '/' => c,
-            'b' => '\x08',
-            'f' => '\x0C',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            _ => return Err(()),
-          })
-        }),
-        preceded(char('u'), unicode_escape()),
-      ))
-      .process::<OM>(input)
+  none_of("\"").flat_map(|c| {
+    if c != '\\' {
+      Either::Left(success(c))
     } else {
-      Ok((input, OM::Output::bind(|| c)))
+      Either::Right(alt((
+        value('\\', tag("\\")),
+        value('\"', tag("\"")),
+        value('\n', tag("n")),
+        value('\r', tag("r")),
+        value('\t', tag("t")),
+        value('\x08', tag("b")),
+        value('\x0C', tag("f")),
+        preceded(char('u'), unicode_escape()),
+      )))
     }
-  }
+  })
 }
 
 fn string<

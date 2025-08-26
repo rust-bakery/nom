@@ -781,8 +781,10 @@ impl<
 }
 
 /// Alternate between two Parser implementations with the same result type.
-pub(crate) enum Either<F, G> {
+pub enum Either<F, G> {
+  /// Left parser alternative
   Left(F),
+  /// Right parser alternative
   Right(G),
 }
 
