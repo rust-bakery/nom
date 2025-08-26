@@ -269,8 +269,7 @@ where
   char('\t')(input)
 }
 
-/// Matches one byte as a character. Note that the input type will
-/// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
+/// Matches one byte as a character.
 ///
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
