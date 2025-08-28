@@ -1,5 +1,6 @@
 //! Traits input types have to implement to work with nom combinators
 use core::iter::Enumerate;
+use core::ptr;
 use core::str::CharIndices;
 
 use crate::error::{ErrorKind, ParseError};
@@ -1338,42 +1339,65 @@ impl HexDisplay for [u8] {
 
   #[allow(unused_variables)]
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
-    let mut v = Vec::with_capacity(self.len() * 3);
     let mut i = from;
-    for chunk in self.chunks(chunk_size) {
-      let s = format!("{:08x}", i);
-      for &ch in s.as_bytes().iter() {
-        v.push(ch);
-      }
-      v.push(b'\t');
-
-      i += chunk_size;
-
-      for &byte in chunk {
-        v.push(CHARS[(byte >> 4) as usize]);
-        v.push(CHARS[(byte & 0xf) as usize]);
-        v.push(b' ');
-      }
-      if chunk_size > chunk.len() {
-        for j in 0..(chunk_size - chunk.len()) {
-          v.push(b' ');
-          v.push(b' ');
-          v.push(b' ');
+    let s_bound = format!("{:08x}", self.len()).len();
+    let iter_num = (self.len() + chunk_size - 1) / chunk_size;
+    let len_bound = iter_num * (s_bound + 3 + 4 * chunk_size);
+    let mut v: Vec<u8> = Vec::with_capacity(len_bound);
+    // SAFETY:
+    // 1. The length of `v` is strictly bounded by `len_bound`, ensuring all writes stay within
+    //    pre-allocated buffer bounds. This prevents out-of-bounds memory access.
+    // 2. All bytes in `v` are guaranteed to be valid ASCII (0x00-0x7F), which is a subset of
+    //    valid UTF-8. This satisfies the invariants required by `String::from_utf8_unchecked`
+    unsafe {
+      let ptr = v.as_mut_ptr();
+      let mut len = 0;
+      for chunk in self.chunks(chunk_size) {
+        let s = format!("{:08x}", i);
+        for &ch in s.as_bytes().iter() {
+          // num writes <= s_bound
+          ptr::write(ptr.add(len), ch);
+          len += 1;
         }
-      }
-      v.push(b'\t');
+        ptr::write(ptr.add(len), b'\t');
+        len += 1;
 
-      for &byte in chunk {
-        if matches!(byte, 32..=126 | 128..=255) {
-          v.push(byte);
-        } else {
-          v.push(b'.');
+        i += chunk_size;
+
+        for &byte in chunk {
+          // num writes = 3*chunk_size [with the res processed as below]
+          ptr::write(ptr.add(len), CHARS[(byte >> 4) as usize]);
+          ptr::write(ptr.add(len + 1), CHARS[(byte & 0xf) as usize]);
+          ptr::write(ptr.add(len + 2), b' ');
+          len += 3;
         }
+        if chunk_size > chunk.len() {
+          for j in 0..(chunk_size - chunk.len()) {
+            ptr::write(ptr.add(len), b' ');
+            ptr::write(ptr.add(len + 1), b' ');
+            ptr::write(ptr.add(len + 2), b' ');
+            len += 3;
+          }
+        }
+        ptr::write(ptr.add(len), b'\t');
+        len += 1;
+
+        for &byte in chunk {
+          // num writes <= chunk_size
+          if matches!(byte, 32..=126 | 128..=255) {
+            ptr::write(ptr.add(len), byte);
+          } else {
+            ptr::write(ptr.add(len), b'.');
+          }
+          len += 1;
+        }
+        ptr::write(ptr.add(len), b'\n');
+        len += 1;
       }
-      v.push(b'\n');
+      v.set_len(len);
+
+      String::from_utf8_unchecked(v)
     }
-
-    String::from_utf8_lossy(&v[..]).into_owned()
   }
 }
 
