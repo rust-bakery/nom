@@ -564,7 +564,30 @@ pub fn value<I, O1: Clone, E: ParseError<I>, F>(
 where
   F: Parser<I, Error = E>,
 {
-  parser.map(move |_| val.clone())
+  Value { val, parser }
+}
+
+/// Parser implementation for [value]
+pub struct Value<F, O1> {
+  parser: F,
+  val: O1,
+}
+
+impl<I, O1, E, F> Parser<I> for Value<F, O1>
+where
+  F: Parser<I, Error = E>,
+  O1: Clone,
+  E: ParseError<I>,
+{
+  type Output = O1;
+  type Error = E;
+  fn process<OM: OutputMode>(
+      &mut self,
+      input: I,
+    ) -> PResult<OM, I, Self::Output, Self::Error> {
+      self.parser.process::<OutputM<Check, OM::Error, OM::Incomplete>>(input)
+        .map(|(i, _)| ( i, OM::Output::bind(|| self.val.clone()) ))
+    }
 }
 
 /// Succeeds if the child parser returns an error.
