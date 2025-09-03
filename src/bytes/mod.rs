@@ -725,7 +725,7 @@ where
 ///
 pub fn escaped<I, Error, F, G>(
   normal: F,
-  control_char: char,
+  control_char: impl AsChar,
   escapable: G,
 ) -> impl Parser<I, Output = I, Error = Error>
 where
@@ -744,17 +744,18 @@ where
 }
 
 /// Parser implementation for [escaped]
-pub struct Escaped<F, G, E> {
+pub struct Escaped<F, G, C, E> {
   normal: F,
   escapable: G,
-  control_char: char,
+  control_char: C,
   e: PhantomData<E>,
 }
 
-impl<I, Error: ParseError<I>, F, G> Parser<I> for Escaped<F, G, Error>
+impl<I, Error: ParseError<I>, F, G, C> Parser<I> for Escaped<F, G, C, Error>
 where
   I: Input + Clone + crate::traits::Offset,
   <I as Input>::Item: crate::traits::AsChar,
+  C: crate::traits::AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
@@ -798,8 +799,8 @@ where
         }
         Err(Err::Error(_)) => {
           // unwrap() should be safe here since index < $i.input_len()
-          if i.iter_elements().next().unwrap().as_char() == self.control_char {
-            let next = self.control_char.len_utf8();
+          if i.iter_elements().next().unwrap().as_char() == self.control_char.as_char() {
+            let next = self.control_char.len();
             if next >= i.input_len() {
               if OM::Incomplete::is_streaming() {
                 return Err(Err::Incomplete(Needed::new(1)));
@@ -900,7 +901,7 @@ where
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn escaped_transform<I, Error, F, G, ExtendItem, Output>(
   normal: F,
-  control_char: char,
+  control_char: impl AsChar,
   transform: G,
 ) -> impl Parser<I, Output = Output, Error = Error>
 where
@@ -924,23 +925,24 @@ where
 }
 
 /// Parser implementation for [escaped_transform]
-pub struct EscapedTransform<F, G, E, ExtendItem, Output> {
+pub struct EscapedTransform<F, G, C, E, ExtendItem, Output> {
   normal: F,
   transform: G,
-  control_char: char,
+  control_char: C,
   e: PhantomData<E>,
   extend: PhantomData<ExtendItem>,
   o: PhantomData<Output>,
 }
 
-impl<I, Error: ParseError<I>, F, G, ExtendItem, Output> Parser<I>
-  for EscapedTransform<F, G, Error, ExtendItem, Output>
+impl<I, Error: ParseError<I>, F, G, C, ExtendItem, Output> Parser<I>
+  for EscapedTransform<F, G, C, Error, ExtendItem, Output>
 where
   I: Clone + crate::traits::Offset + Input,
   I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   <F as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   <G as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   <I as Input>::Item: crate::traits::AsChar,
+  C: crate::traits::AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
@@ -979,8 +981,8 @@ where
         }
         Err(Err::Error(_)) => {
           // unwrap() should be safe here since index < $i.input_len()
-          if remainder.iter_elements().next().unwrap().as_char() == self.control_char {
-            let next = index + self.control_char.len_utf8();
+          if remainder.iter_elements().next().unwrap().as_char() == self.control_char.as_char() {
+            let next = index + self.control_char.len();
             let input_len = input.input_len();
 
             if next >= input_len {

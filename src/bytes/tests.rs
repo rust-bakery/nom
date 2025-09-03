@@ -73,7 +73,7 @@ fn escaping() {
   use crate::character::streaming::one_of;
 
   fn esc(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    escaped(alpha, '\\', one_of("\"n\\"))(i)
+    escaped(alpha, b'\\', one_of(b"\"n\\".as_slice()))(i)
   }
   assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
   assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], &b"ab\\\"cd"[..])));
@@ -97,9 +97,27 @@ fn escaping() {
   );
 
   fn esc2(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    escaped(digit, '\\', one_of("\"n\\"))(i)
+    escaped(digit, b'\\', one_of(&b"\"n\\"[..]))(i)
   }
   assert_eq!(esc2(&b"12\\nnn34"[..]), Ok((&b"nn34"[..], &b"12\\n"[..])));
+
+  // Escapes containing invalid UTF-8 sequences
+  // https://github.com/rust-bakery/nom/issues/1679
+  fn esc3(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    escaped(digit, 0xDB, one_of(&b"\xDB\xDC\xDD"[..]))(i)
+  }
+  assert_eq!(
+    esc3(&b"12\xDB\xDC34;"[..]),
+    Ok((b";".as_slice(), b"12\xDB\xDC34".as_slice()))
+  );
+  assert_eq!(
+    esc3(&b"12\xDC34;"[..]),
+    Ok((b"\xDC34;".as_slice(), b"12".as_slice()))
+  );
+  assert_eq!(
+    esc3(&b"12\xDB\xDC\xDC\xDC34"[..]),
+    Ok((b"\xDC\xDC34".as_slice(), b"12\xDB\xDC".as_slice()))
+  );
 }
 
 #[cfg(feature = "alloc")]
@@ -147,17 +165,17 @@ fn to_s(i: Vec<u8>) -> String {
 #[cfg(feature = "alloc")]
 #[test]
 fn escape_transform() {
-  use crate::Parser;
+  use crate::{bytes::complete::is_not, Parser};
 
   fn esc(i: &[u8]) -> IResult<&[u8], String> {
     map(
       escaped_transform(
         alpha,
-        '\\',
+        b'\\',
         alt((
-          value(&b"\\"[..], tag("\\")),
-          value(&b"\""[..], tag("\"")),
-          value(&b"\n"[..], tag("n")),
+          value(b"\\".as_slice(), tag(b"\\".as_slice())),
+          value(b"\"".as_slice(), tag(b"\"".as_slice())),
+          value(b"\n".as_slice(), tag(b"n".as_slice())),
         )),
       ),
       to_s,
@@ -199,10 +217,10 @@ fn escape_transform() {
     map(
       escaped_transform(
         alpha,
-        '&',
+        b'&',
         alt((
-          value("è".as_bytes(), tag("egrave;")),
-          value("à".as_bytes(), tag("agrave;")),
+          value("è".as_bytes(), tag(b"egrave;".as_slice())),
+          value("à".as_bytes(), tag(b"agrave;".as_slice())),
         )),
       ),
       to_s,
@@ -216,6 +234,40 @@ fn escape_transform() {
   assert_eq!(
     esc2(&b"ab&egrave;D&agrave;EF;"[..]),
     Ok((&b";"[..], String::from("abèDàEF")))
+  );
+
+  const FEND: u8 = 0xC0;
+  const FESC: u8 = 0xDB;
+  const TFEND: u8 = 0xDC;
+  const TFESC: u8 = 0xDD;
+
+  // Escapes containing invalid UTF-8 sequences
+  // https://github.com/rust-bakery/nom/issues/1679
+  fn esc3(i: &[u8]) -> IResult<&[u8], Vec<u8>> {
+    escaped_transform(
+      is_not([FESC].as_slice()),
+      FESC,
+      alt((
+        value(&[FEND][..], tag(&[TFEND][..])),
+        value(&[FESC][..], tag(&[TFESC][..])),
+      )),
+    )(i)
+  }
+
+  assert_eq!(
+    esc3(&[0x61, 0x62, FESC, TFEND, 0x63, 0x64, 0x65]),
+    Ok((&[][..], vec![0x61, 0x62, FEND, 0x63, 0x64, 0x65])),
+  );
+  assert_eq!(
+    esc3(&[0x61, 0x62, 0x63]),
+    Ok((&[][..], vec![0x61, 0x62, 0x63])),
+  );
+  assert_eq!(
+    esc3(&[0x61, FESC, 0x00, TFEND, 0x63, 0x64]),
+    Err(Err::Error(error_position!(
+      &[0x00, TFEND, 0x63, 0x64][..],
+      ErrorKind::Tag
+    ))),
   );
 }
 

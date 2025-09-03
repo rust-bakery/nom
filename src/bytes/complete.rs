@@ -417,7 +417,7 @@ where
 ///
 pub fn escaped<'a, I, Error, F, G>(
   normal: F,
-  control_char: char,
+  control_char: impl crate::traits::AsChar,
   escapable: G,
 ) -> impl FnMut(I) -> IResult<I, I, Error>
 where
@@ -467,7 +467,7 @@ where
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
   normal: F,
-  control_char: char,
+  control_char: impl crate::traits::AsChar,
   transform: G,
 ) -> impl FnMut(I) -> IResult<I, Output, Error>
 where

@@ -138,19 +138,26 @@ where
   }
 }
 
-/// Recognizes one character and checks that it satisfies a predicate
+/// Recognizes one character or byte and checks that it satisfies a predicate.
 ///
 /// # Example
 ///
 /// ```
 /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::complete::satisfy;
-/// fn parser(i: &str) -> IResult<&str, char> {
+/// fn char_parser(i: &str) -> IResult<&str, char> {
 ///     satisfy(|c| c == 'a' || c == 'b')(i)
 /// }
-/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
-/// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
+/// assert_eq!(char_parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(char_parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
+/// assert_eq!(char_parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
+///
+/// fn byte_parser(i: &[u8]) -> IResult<&[u8], char> {
+///     satisfy(|c| c == 'a' || c == 'b')(i)
+/// }
+/// assert_eq!(byte_parser(b"abc"), Ok((&b"bc"[..], 'a')));
+/// assert_eq!(byte_parser(b"cd"), Err(Err::Error(Error::new(&b"cd"[..], ErrorKind::Satisfy))));
+/// assert_eq!(byte_parser(b""), Err(Err::Error(Error::new(&b""[..], ErrorKind::Satisfy))));
 /// ```
 pub fn satisfy<F, I, Error: ParseError<I>>(
   predicate: F,
@@ -190,7 +197,7 @@ where
     match (i).iter_elements().next().map(|t| {
       let c = t.as_char();
       let b = (self.predicate)(c);
-      (c, b)
+      (c, t.len(), b)
     }) {
       None => {
         if OM::Incomplete::is_streaming() {
@@ -199,13 +206,13 @@ where
           Err(Err::Error(OM::Error::bind(|| (self.make_error)(i))))
         }
       }
-      Some((_, false)) => Err(Err::Error(OM::Error::bind(|| (self.make_error)(i)))),
-      Some((c, true)) => Ok((i.take_from(c.len()), OM::Output::bind(|| c.as_char()))),
+      Some((_, _, false)) => Err(Err::Error(OM::Error::bind(|| (self.make_error)(i)))),
+      Some((c, len, true)) => Ok((i.take_from(len), OM::Output::bind(|| c))),
     }
   }
 }
 
-/// Recognizes one of the provided characters.
+/// Recognizes one of the provided characters or bytes.
 ///
 /// # Example
 ///
@@ -215,6 +222,10 @@ where
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
+///
+/// assert_eq!(one_of::<_, _, (&[u8], ErrorKind)>(&b"abc"[..])(b"b"), Ok((&b""[..], 'b')));
+/// assert_eq!(one_of::<_, _, (&[u8], ErrorKind)>(&b"a"[..])(b"bc"), Err(Err::Error((&b"bc"[..], ErrorKind::OneOf))));
+/// assert_eq!(one_of::<_, _, (&[u8], ErrorKind)>(&b"a"[..])(b""), Err(Err::Error((&b""[..], ErrorKind::OneOf))));
 /// ```
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
 where
@@ -223,12 +234,12 @@ where
   T: FindToken<char>,
 {
   Satisfy {
-    predicate: move |c: char| list.find_token(c),
+    predicate: move |c| list.find_token(c),
     make_error: move |i| Error::from_error_kind(i, ErrorKind::OneOf),
   }
 }
 
-//. Recognizes a character that is not in the provided characters.
+/// Recognizes a character or byte that is not in the provided characters or bytes.
 ///
 /// # Example
 ///
@@ -238,6 +249,10 @@ where
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
+///
+/// assert_eq!(none_of::<_, _, (&[u8], ErrorKind)>(&b"abc"[..])(b"z"), Ok((&b""[..], 'z')));
+/// assert_eq!(none_of::<_, _, (&[u8], ErrorKind)>(&b"ab"[..])(b"a"), Err(Err::Error((&b"a"[..], ErrorKind::NoneOf))));
+/// assert_eq!(none_of::<_, _, (&[u8], ErrorKind)>(&b"a"[..])(b""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
 where
@@ -246,12 +261,12 @@ where
   T: FindToken<char>,
 {
   Satisfy {
-    predicate: move |c: char| !list.find_token(c),
+    predicate: move |c| !list.find_token(c),
     make_error: move |i| Error::from_error_kind(i, ErrorKind::NoneOf),
   }
 }
 
-// Matches one byte as a character. Note that the input type will
+/// Matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///
 /// # Example
