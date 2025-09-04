@@ -14,7 +14,7 @@ use std::str;
 
 fn category(i: &[u8]) -> IResult<&[u8], &str> {
   map_res(
-    delimited(char('['), take_while(|c| c != b']'), char(']')),
+    delimited(char('['), take_while(|&c| c != b']'), char(']')),
     str::from_utf8,
   )
   .parse(i)
@@ -23,8 +23,8 @@ fn category(i: &[u8]) -> IResult<&[u8], &str> {
 fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
   let (i, key) = map_res(alphanumeric, str::from_utf8).parse(i)?;
   let (i, _) = (opt(space), char('='), opt(space)).parse(i)?;
-  let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8).parse(i)?;
-  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n'))).parse(i)?;
+  let (i, val) = map_res(take_while(|&c| c != b'\n' && c != b';'), str::from_utf8).parse(i)?;
+  let (i, _) = opt(pair(char(';'), take_while(|&c| c != b'\n'))).parse(i)?;
   Ok((i, (key, val)))
 }
 

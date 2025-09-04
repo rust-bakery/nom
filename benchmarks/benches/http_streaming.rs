@@ -22,8 +22,8 @@ struct Header<'a> {
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
-fn is_token(c: u8) -> bool {
-  match c {
+fn is_token(c: &u8) -> bool {
+  match *c {
     128..=255 => false,
     0..=31    => false,
     b'('      => false,
@@ -48,23 +48,23 @@ fn is_token(c: u8) -> bool {
   }
 }
 
-fn not_line_ending(c: u8) -> bool {
-  c != b'\r' && c != b'\n'
+fn not_line_ending(c: &u8) -> bool {
+  *c != b'\r' && *c != b'\n'
 }
 
-fn is_space(c: u8) -> bool {
-  c == b' '
+fn is_space(c: &u8) -> bool {
+  *c == b' '
 }
 
-fn is_not_space(c: u8) -> bool {
-  c != b' '
+fn is_not_space(c: &u8) -> bool {
+  *c != b' '
 }
-fn is_horizontal_space(c: u8) -> bool {
-  c == b' ' || c == b'\t'
+fn is_horizontal_space(c: &u8) -> bool {
+  *c == b' ' || *c == b'\t'
 }
 
-fn is_version(c: u8) -> bool {
-  c >= b'0' && c <= b'9' || c == b'.'
+fn is_version(c: &u8) -> bool {
+  *c >= b'0' && *c <= b'9' || *c == b'.'
 }
 
 fn request_line(input: &[u8]) -> IResult<&[u8], Request<'_>> {

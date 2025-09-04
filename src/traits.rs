@@ -4,7 +4,6 @@ use core::str::CharIndices;
 
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::iter::Copied;
 use crate::lib::std::ops::{
   Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
@@ -190,9 +189,9 @@ pub trait Input: Clone + Sized {
   }
 }
 
-impl<'a> Input for &'a [u8] {
-  type Item = u8;
-  type Iter = Copied<Iter<'a, u8>>;
+impl<'a, T> Input for &'a [T] {
+  type Item = &'a T;
+  type Iter = Iter<'a, T>;
   type IterIndices = Enumerate<Self::Iter>;
 
   fn input_len(&self) -> usize {
@@ -218,12 +217,12 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    self.iter().position(|b| predicate(*b))
+    self.iter().position(|b| predicate(b))
   }
 
   #[inline]
   fn iter_elements(&self) -> Self::Iter {
-    self.iter().copied()
+    self.iter()
   }
 
   #[inline]
@@ -245,7 +244,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c)) {
       Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
@@ -260,7 +259,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c)) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
@@ -274,7 +273,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c)) {
       Some(i) => Ok(self.take_split(i)),
       None => Ok(self.take_split(self.len())),
     }
@@ -289,7 +288,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c)) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok(self.take_split(i)),
       None => {
@@ -311,7 +310,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c)) {
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
         if OM::Incomplete::is_streaming() {
@@ -336,7 +335,7 @@ impl<'a> Input for &'a [u8] {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().position(|c| predicate(*c)) {
+    match self.iter().position(|c| predicate(c)) {
       Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
@@ -565,6 +564,36 @@ impl<'a> Input for &'a str {
   }
 }
 
+/// This trait is used to automatically convert types into the known Input types.
+/// As an example, the generic implementation for const sized slices to normal slices is used.
+/// You can also implement this on your own types, to make it easier to use in for example the `tag` function.
+pub trait IntoInput {
+  /// The input type that this type can be converted into
+  type Input: Input;
+
+  /// Converts this type into the input type
+  fn into_input(self) -> Self::Input;
+}
+
+impl<T: Input> IntoInput for T {
+  type Input = T;
+
+  fn into_input(self) -> Self::Input {
+    self
+  }
+}
+
+impl<'a, T, const D: usize> IntoInput for &'a [T; D]
+where
+  &'a [T]: Input,
+{
+  type Input = &'a [T];
+
+  fn into_input(self) -> Self::Input {
+    self.as_slice()
+  }
+}
+
 /// Useful functions to calculate the offset between slices and show a hexdump of a slice
 pub trait Offset {
   /// Offset between the first byte of self and the first byte of the argument
@@ -573,7 +602,7 @@ pub trait Offset {
   fn offset(&self, second: &Self) -> usize;
 }
 
-impl Offset for [u8] {
+impl<T> Offset for [T] {
   fn offset(&self, second: &Self) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
@@ -582,7 +611,7 @@ impl Offset for [u8] {
   }
 }
 
-impl<'a> Offset for &'a [u8] {
+impl<'a, T> Offset for &'a [T] {
   fn offset(&self, second: &Self) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
@@ -1165,16 +1194,16 @@ impl ExtendInto for [u8] {
 }
 
 #[cfg(feature = "alloc")]
-impl ExtendInto for &[u8] {
-  type Item = u8;
-  type Extender = Vec<u8>;
+impl<T: Clone> ExtendInto for &[T] {
+  type Item = T;
+  type Extender = Vec<T>;
 
   #[inline]
-  fn new_builder(&self) -> Vec<u8> {
+  fn new_builder(&self) -> Vec<T> {
     Vec::new()
   }
   #[inline]
-  fn extend_into(&self, acc: &mut Vec<u8>) {
+  fn extend_into(&self, acc: &mut Vec<T>) {
     acc.extend_from_slice(self);
   }
 }
@@ -1677,5 +1706,16 @@ mod tests {
     assert_eq!(a.slice_index(7), Ok(16));
 
     assert!(a.slice_index(8).is_err());
+  }
+
+  #[test]
+  fn test_const_slice_input() {
+    let a = b"abcdefg";
+    let b = &a[2..];
+    let c = &a[..4];
+    let d = &a[3..5];
+    assert_eq!(a.into_input().take_from(2), b);
+    assert_eq!(a.into_input().take(4), c);
+    assert_eq!(a.into_input().take_from(3).take(2), d);
   }
 }

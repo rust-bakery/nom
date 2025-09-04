@@ -27,9 +27,9 @@ use crate::traits::{AsBytes, AsChar, Compare, Input, Offset};
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+pub fn be_u8<'a,I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_uint(input, 1)
 }
@@ -50,9 +50,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+pub fn be_u16<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_uint(input, 2)
 }
@@ -73,9 +73,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn be_u24<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_uint(input, 3)
 }
@@ -96,9 +96,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn be_u32<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_uint(input, 4)
 }
@@ -119,9 +119,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+pub fn be_u64<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_uint(input, 8)
 }
@@ -142,17 +142,17 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+pub fn be_u128<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_uint(input, 16)
 }
 
 #[inline]
-fn be_uint<I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
+fn be_uint<'a, I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
   Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
 {
   super::be_uint(bound).parse_complete(input)
@@ -174,9 +174,9 @@ where
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+pub fn be_i8<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_u8.map(|x| x as i8).parse(input)
 }
@@ -197,9 +197,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+pub fn be_i16<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_u16.map(|x| x as i16).parse(input)
 }
@@ -220,9 +220,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn be_i24<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   // Same as the unsigned version but we need to sign-extend manually here
   be_u24
@@ -252,9 +252,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn be_i32<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_u32.map(|x| x as i32).parse(input)
 }
@@ -275,9 +275,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+pub fn be_i64<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_u64.map(|x| x as i64).parse(input)
 }
@@ -298,9 +298,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+pub fn be_i128<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_u128.map(|x| x as i128).parse(input)
 }
@@ -321,9 +321,9 @@ where
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+pub fn le_u8<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_uint(input, 1)
 }
@@ -344,9 +344,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+pub fn le_u16<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_uint(input, 2)
 }
@@ -367,9 +367,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn le_u24<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_uint(input, 3)
 }
@@ -390,9 +390,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn le_u32<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_uint(input, 4)
 }
@@ -413,9 +413,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+pub fn le_u64<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_uint(input, 8)
 }
@@ -436,17 +436,17 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+pub fn le_u128<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_uint(input, 16)
 }
 
 #[inline]
-fn le_uint<I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
+fn le_uint<'a, I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
   Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
 {
   super::le_uint(bound).parse_complete(input)
@@ -468,9 +468,9 @@ where
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+pub fn le_i8<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   be_u8.map(|x| x as i8).parse(input)
 }
@@ -491,9 +491,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+pub fn le_i16<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_u16.map(|x| x as i16).parse(input)
 }
@@ -514,9 +514,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn le_i24<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   // Same as the unsigned version but we need to sign-extend manually here
   le_u24
@@ -546,9 +546,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn le_i32<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_u32.map(|x| x as i32).parse(input)
 }
@@ -569,9 +569,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+pub fn le_i64<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_u64.map(|x| x as i64).parse(input)
 }
@@ -592,9 +592,9 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+pub fn le_i128<'a, I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   le_u128.map(|x| x as i128).parse(input)
 }
@@ -616,9 +616,9 @@ where
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+pub fn u8<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   super::u8().parse_complete(input)
 }
@@ -649,11 +649,11 @@ where
 /// assert_eq!(le_u16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u16<I, E: ParseError<I>>(
+pub fn u16<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, u16, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::u16(endian).parse_complete(input)
 }
@@ -683,11 +683,11 @@ where
 /// assert_eq!(le_u24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u24<I, E: ParseError<I>>(
+pub fn u24<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, u32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::u24(endian).parse_complete(input)
 }
@@ -717,11 +717,11 @@ where
 /// assert_eq!(le_u32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u32<I, E: ParseError<I>>(
+pub fn u32<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, u32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::u32(endian).parse_complete(input)
 }
@@ -751,11 +751,11 @@ where
 /// assert_eq!(le_u64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u64<I, E: ParseError<I>>(
+pub fn u64<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, u64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::u64(endian).parse_complete(input)
 }
@@ -785,11 +785,11 @@ where
 /// assert_eq!(le_u128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u128<I, E: ParseError<I>>(
+pub fn u128<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, u128, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::u128(endian).parse_complete(input)
 }
@@ -811,9 +811,9 @@ where
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
+pub fn i8<'a, I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   super::u8().map(|x| x as i8).parse_complete(i)
 }
@@ -843,11 +843,11 @@ where
 /// assert_eq!(le_i16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i16<I, E: ParseError<I>>(
+pub fn i16<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, i16, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::i16(endian).parse_complete(input)
 }
@@ -877,11 +877,11 @@ where
 /// assert_eq!(le_i24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i24<I, E: ParseError<I>>(
+pub fn i24<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, i32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::i24(endian).parse_complete(input)
 }
@@ -911,11 +911,11 @@ where
 /// assert_eq!(le_i32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i32<I, E: ParseError<I>>(
+pub fn i32<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, i32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::i32(endian).parse_complete(input)
 }
@@ -945,11 +945,11 @@ where
 /// assert_eq!(le_i64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i64<I, E: ParseError<I>>(
+pub fn i64<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, i64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::i64(endian).parse_complete(input)
 }
@@ -979,11 +979,11 @@ where
 /// assert_eq!(le_i128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i128<I, E: ParseError<I>>(
+pub fn i128<'a, I, E: ParseError<I>>(
   endian: crate::number::Endianness,
 ) -> impl Fn(I) -> IResult<I, i128, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   move |input| super::i128(endian).parse_complete(input)
 }
@@ -1004,9 +1004,9 @@ where
 /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+pub fn be_f32<'a, I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   match be_u32(input) {
     Err(e) => Err(e),
@@ -1030,9 +1030,9 @@ where
 /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+pub fn be_f64<'a, I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   match be_u64(input) {
     Err(e) => Err(e),
@@ -1056,9 +1056,9 @@ where
 /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+pub fn le_f32<'a, I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   match le_u32(input) {
     Err(e) => Err(e),
@@ -1082,9 +1082,9 @@ where
 /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+pub fn le_f64<'a, I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   match le_u64(input) {
     Err(e) => Err(e),
@@ -1117,9 +1117,9 @@ where
 /// assert_eq!(le_f32(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn f32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f32, E>
+pub fn f32<'a, I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f32, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_f32,
@@ -1156,9 +1156,9 @@ where
 /// assert_eq!(le_f64(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn f64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f64, E>
+pub fn f64<'a, I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f64, E>
 where
-  I: Input<Item = u8>,
+  I: Input<Item = &'a u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_f64,
@@ -1279,15 +1279,15 @@ where
       })
     },
     |i: T| {
-      crate::bytes::complete::tag_no_case::<_, _, E>("nan")(i.clone())
+      crate::bytes::complete::tag_no_case::<_, _, E>("nan").parse(i.clone())
         .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
     },
     |i: T| {
-      crate::bytes::complete::tag_no_case::<_, _, E>("infinity")(i.clone())
+      crate::bytes::complete::tag_no_case::<_, _, E>("infinity").parse(i.clone())
         .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
     },
     |i: T| {
-      crate::bytes::complete::tag_no_case::<_, _, E>("inf")(i.clone())
+      crate::bytes::complete::tag_no_case::<_, _, E>("inf").parse(i.clone())
         .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
     },
   ))
