@@ -855,6 +855,26 @@ impl<'a> AsChar for &'a char {
   }
 }
 
+/// Transforms common types to a single byte
+pub trait AsByte: Copy {
+  /// makes a byte from self
+  fn as_byte(self) -> u8;
+}
+
+impl AsByte for u8 {
+  #[inline]
+  fn as_byte(self) -> u8 {
+    self
+  }
+}
+
+impl<'a> AsByte for &'a u8 {
+  #[inline]
+  fn as_byte(self) -> u8 {
+    *self
+  }
+}
+
 /// Indicates whether a comparison was successful, an error, or
 /// if more data was needed
 #[derive(Debug, Eq, PartialEq)]
