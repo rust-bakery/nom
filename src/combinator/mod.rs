@@ -603,7 +603,7 @@ where
 
   fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let i = input.clone();
-    match self.parser.process::<OM>(input) {
+    match self.parser.process::<OutputM<Check, OM::Error, OM::Incomplete>>(input) {
       Ok(_) => Err(Err::Error(OM::Error::bind(|| {
         <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::Not)
       }))),
