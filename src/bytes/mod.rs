@@ -276,19 +276,23 @@ where
 /// takes the input and returns a bool)*.
 /// # Example
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::bytes::complete::take_while;
+/// # use nom::{Err, error::ErrorKind, Needed, Parser, IResult};
+/// use nom::bytes::take_while;
 /// use nom::AsChar;
 ///
 /// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while(AsChar::is_alpha)(s)
+///   take_while(AsChar::is_alpha).parse(s)
 /// }
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
 /// assert_eq!(alpha(b"12345"), Ok((&b"12345"[..], &b""[..])));
-/// assert_eq!(alpha(b"latin"), Ok((&b""[..], &b"latin"[..])));
-/// assert_eq!(alpha(b""), Ok((&b""[..], &b""[..])));
+/// assert_eq!(alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(alpha(b""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
+///
+/// See also:
+///   - [`bytes::streaming::take_while`](crate::bytes::streaming::take_while)
+///   - [`bytes::complete::take_while`](crate::bytes::complete::take_while)
 pub fn take_while<F, I, Error: ParseError<I>>(cond: F) -> impl Parser<I, Output = I, Error = Error>
 where
   I: Input,
