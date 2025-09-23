@@ -24,17 +24,37 @@ mod tests;
 /// Return the remaining input.
 ///
 /// ```rust
-/// # use nom::error::ErrorKind;
+/// use nom::error;
+/// use nom::Parser;
 /// use nom::combinator::rest;
-/// assert_eq!(rest::<_,(_, ErrorKind)>("abc"), Ok(("", "abc")));
-/// assert_eq!(rest::<_,(_, ErrorKind)>(""), Ok(("", "")));
+/// assert_eq!(rest::<&str, error::Error<&str>>().parse_complete("abc"), Ok(("", "abc")));
+/// assert_eq!(rest::<&str, error::Error<&str>>().parse_complete(""), Ok(("", "")));
 /// ```
 #[inline]
-pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn rest<T, E: ParseError<T>>() -> impl Parser<T, Output = T, Error = E>
 where
   T: Input,
 {
-  Ok(input.take_split(input.input_len()))
+  Rest {
+    i: PhantomData,
+    e: PhantomData,
+  }
+}
+
+/// Parser implementation for [rest]
+pub struct Rest<I, E> {
+  i: PhantomData<I>,
+  e: PhantomData<E>,
+}
+
+impl<I: Input, E: ParseError<I>> Parser<I> for Rest<I, E> {
+  type Output = I;
+  type Error = E;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, o) = input.take_split(input.input_len());
+    Ok((i, OM::Output::bind(|| o)))
+  }
 }
 
 /// Return the length of the remaining input.
@@ -766,7 +786,7 @@ where
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///   alt((
 ///     preceded(one_of("+-"), digit1),
-///     rest
+///     rest()
 ///   )).parse(input)
 /// }
 ///
@@ -789,7 +809,7 @@ where
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///   alt((
 ///     preceded(one_of("+-"), cut(digit1)),
-///     rest
+///     rest()
 ///   )).parse(input)
 /// }
 ///
