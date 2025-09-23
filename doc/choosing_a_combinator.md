@@ -127,14 +127,14 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 
 Use these functions with a combinator like `take_while`:
 
-- [`is_alphabetic`](https://docs.rs/nom/latest/nom/character/fn.is_alphabetic.html): Tests if byte is ASCII alphabetic: `[A-Za-z]`
-- [`is_alphanumeric`](https://docs.rs/nom/latest/nom/character/fn.is_alphanumeric.html): Tests if byte is ASCII alphanumeric: `[A-Za-z0-9]`
-- [`is_digit`](https://docs.rs/nom/latest/nom/character/fn.is_digit.html): Tests if byte is ASCII digit: `[0-9]`
-- [`is_hex_digit`](https://docs.rs/nom/latest/nom/character/fn.is_hex_digit.html): Tests if byte is ASCII hex digit: `[0-9A-Fa-f]`
-- [`is_oct_digit`](https://docs.rs/nom/latest/nom/character/fn.is_oct_digit.html): Tests if byte is ASCII octal digit: `[0-7]`
+- [`AsChar::is_alpha`](https://docs.rs/nom/latest/nom/trait.AsChar.html#tymethod.is_alpha): Tests if byte is ASCII alphabetic: `[A-Za-z]`
+- [`AsChar::is_alphanum`](https://docs.rs/nom/latest/nom/trait.AsChar.html#tymethod.is_alphanum): Tests if byte is ASCII alphanumeric: `[A-Za-z0-9]`
+- [`AsChar::is_dec_digit`](https://docs.rs/nom/latest/nom/trait.AsChar.html#tymethod.is_dec_digit): Tests if byte is ASCII digit: `[0-9]`
+- [`AsChar::is_hex_digit`](https://docs.rs/nom/latest/nom/trait.AsChar.html#tymethod.is_hex_digit): Tests if byte is ASCII hex digit: `[0-9A-Fa-f]`
+- [`AsChar::is_oct_digit`](https://docs.rs/nom/latest/nom/trait.AsChar.html#tymethod.is_oct_digit): Tests if byte is ASCII octal digit: `[0-7]`
 - [`is_bin_digit`](https://docs.rs/nom/latest/nom/character/fn.is_bin_digit.html): Tests if byte is ASCII binary digit: `[0-1]`
-- [`is_space`](https://docs.rs/nom/latest/nom/character/fn.is_space.html): Tests if byte is ASCII space or tab: `[ \t]`
-- [`is_newline`](https://docs.rs/nom/latest/nom/character/fn.is_newline.html): Tests if byte is ASCII newline: `[\n]`
+- [`AsChar::is_space`](https://docs.rs/nom/latest/nom/trait.AsChar.html#tymethod.is_space): Tests if byte is ASCII space or tab: `[ \t]`
+- [`AsChar::is_newline`](https://docs.rs/nom/latest/nom/trait.AsChar.html#tymethod.is_newline): Tests if byte is ASCII newline: `[\n]`
 
 Alternatively there are ready to use functions:
 
