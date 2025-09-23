@@ -10,6 +10,7 @@ use crate::Parser;
 use crate::{
   branch::alt,
   bytes::complete::{escaped, escaped_transform, tag},
+  character::complete::anychar,
   combinator::{map, value},
   lib::std::string::String,
   lib::std::vec::Vec,
@@ -276,6 +277,27 @@ fn escape_transform_str() {
     )(i)
   }
   assert_eq!(esc3("a␛0bc␛n"), Ok(("", String::from("a\0bc\n"))));
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn escape_transform_string() {
+  fn esc(i: &str) -> IResult<&str, String> {
+    escaped_transform(
+      alpha,
+      '\\',
+      alt((
+        value(String::from("\""), tag("\"")),
+        map(anychar, |c| format!("\\{}", c)),
+      )),
+    )(i)
+  }
+
+  assert_eq!(esc("abcd;"), Ok((";", String::from("abcd"))));
+  assert_eq!(esc(r#"ab\"cd;"#), Ok((";", String::from(r#"ab"cd"#))));
+  assert_eq!(esc(r#"\"abcd;"#), Ok((";", String::from(r#""abcd"#))));
+  assert_eq!(esc(r#"\n;"#), Ok((";", String::from(r#"\n"#))));
+  assert_eq!(esc(r#"ab\"12"#), Ok(("12", String::from(r#"ab""#))));
 }
 
 #[test]
