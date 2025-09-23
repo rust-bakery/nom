@@ -1210,6 +1210,21 @@ impl ExtendInto for &str {
 }
 
 #[cfg(feature = "alloc")]
+impl ExtendInto for String {
+  type Item = char;
+  type Extender = String;
+
+  #[inline]
+  fn new_builder(&self) -> String {
+    String::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut String) {
+    acc.push_str(self);
+  }
+}
+
+#[cfg(feature = "alloc")]
 impl ExtendInto for char {
   type Item = char;
   type Extender = String;
