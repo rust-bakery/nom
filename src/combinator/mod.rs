@@ -925,7 +925,7 @@ where
   type Item = Output;
 
   fn next(&mut self) -> Option<Self::Item> {
-    if let State::Running = self.state.take().unwrap() {
+    if let Some(State::Running) = self.state {
       let input = self.input.clone();
 
       match (self.iterator).parse(input) {

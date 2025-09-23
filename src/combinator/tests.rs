@@ -282,3 +282,26 @@ fn fail_test() {
     Err(Err::Error((b, ErrorKind::Fail)))
   );
 }
+
+#[test]
+fn parser_iterator_test() {
+  use crate::character::complete::alpha1;
+  use crate::sequence::terminated;
+  use crate::IResult;
+
+  let input: &str = "next:test:";
+
+  let mut nom_it = iterator(input, terminated(alpha1, tag(":")));
+
+  assert_eq!(Some("next"), nom_it.next());
+  assert_eq!(Some("test"), nom_it.next());
+
+  // and then None once it's over.
+  assert_eq!(None, nom_it.next());
+
+  // None for more calls
+  assert_eq!(None, nom_it.next());
+
+  let parser_result: IResult<_, _> = nom_it.finish();
+  assert_eq!(Ok(("", ())), parser_result);
+}
