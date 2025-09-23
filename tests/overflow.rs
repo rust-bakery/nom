@@ -83,6 +83,22 @@ fn overflow_incomplete_many_till() {
 }
 
 #[test]
+fn overflow_incomplete_many_till_count() {
+  use nom::{bytes::complete::tag, multi::many_till_count};
+
+  #[allow(clippy::type_complexity)]
+  fn multi(i: &[u8]) -> IResult<&[u8], (usize, &[u8])> {
+    many_till_count(length_data(be_u64), tag("abc")).parse(i)
+  }
+
+  // Trigger an overflow in many_till
+  assert_eq!(
+    multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef"[..]),
+    Err(Err::Incomplete(Needed::new(18446744073709551599)))
+  );
+}
+
+#[test]
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_many_m_n() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
