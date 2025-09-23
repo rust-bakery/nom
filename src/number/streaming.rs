@@ -8,7 +8,7 @@ use crate::error::{ErrorKind, ParseError};
 use crate::lib::std::ops::{Add, Shl};
 use crate::sequence::pair;
 use crate::traits::{AsBytes, AsChar, Compare, Offset};
-use crate::{internal::*, Input};
+use crate::{internal::*, Input, ParseTo};
 
 /// Recognizes an unsigned 1 byte integer.
 ///
@@ -1377,7 +1377,7 @@ where
 pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Clone + Offset,
-  T: Input + crate::traits::ParseTo<f32> + Compare<&'static str>,
+  T: Input + ParseTo + Compare<&'static str>,
   <T as Input>::Item: AsChar + Clone,
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
@@ -1427,7 +1427,7 @@ where
 pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Clone + Offset,
-  T: Input + crate::traits::ParseTo<f64> + Compare<&'static str>,
+  T: Input + ParseTo + Compare<&'static str>,
   <T as Input>::Item: AsChar + Clone,
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
