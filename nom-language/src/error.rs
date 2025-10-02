@@ -137,6 +137,8 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(input: I, e: VerboseErro
         VerboseErrorKind::Context(s) => write!(&mut result, "{}: in {}, got empty input\n\n", i, s),
         VerboseErrorKind::Nom(e) => write!(&mut result, "{}: in {:?}, got empty input\n\n", i, e),
       }
+      // Because `write!` to a `String` is infallible, this `unwrap` is fine.
+      .unwrap()
     } else {
       let prefix = &input.as_bytes()[..offset];
 
@@ -163,69 +165,79 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(input: I, e: VerboseErro
       let column_number = line.offset(substring) + 1;
 
       match kind {
-        VerboseErrorKind::Char(c) => {
+        VerboseErrorKind::Char(expected) => {
+          writeln!(
+            &mut result,
+            "{i}: at line {line_number} column {column_number}:",
+          )
+          .unwrap();
+          show_position(&mut result, line, column_number);
           if let Some(actual) = substring.chars().next() {
-            write!(
-              &mut result,
-              "{i}: at line {line_number}:\n\
-               {line}\n\
-               {caret:>column$}\n\
-               expected '{expected}', found {actual}\n\n",
-              i = i,
-              line_number = line_number,
-              line = line,
-              caret = '^',
-              column = column_number,
-              expected = c,
-              actual = actual,
-            )
+            write!(&mut result, "expect '{expected}', found {actual}\n\n").unwrap();
           } else {
-            write!(
-              &mut result,
-              "{i}: at line {line_number}:\n\
-               {line}\n\
-               {caret:>column$}\n\
-               expected '{expected}', got end of input\n\n",
-              i = i,
-              line_number = line_number,
-              line = line,
-              caret = '^',
-              column = column_number,
-              expected = c,
-            )
+            write!(&mut result, "expected '{expected}', got end of input\n\n").unwrap();
           }
         }
-        VerboseErrorKind::Context(s) => write!(
-          &mut result,
-          "{i}: at line {line_number}, in {context}:\n\
-             {line}\n\
-             {caret:>column$}\n\n",
-          i = i,
-          line_number = line_number,
-          context = s,
-          line = line,
-          caret = '^',
-          column = column_number,
-        ),
-        VerboseErrorKind::Nom(e) => write!(
-          &mut result,
-          "{i}: at line {line_number}, in {nom_err:?}:\n\
-             {line}\n\
-             {caret:>column$}\n\n",
-          i = i,
-          line_number = line_number,
-          nom_err = e,
-          line = line,
-          caret = '^',
-          column = column_number,
-        ),
+        VerboseErrorKind::Context(context) => {
+          writeln!(
+            &mut result,
+            "{i}: at line {line_number} column {column_number}, in {context}:",
+          )
+          .unwrap();
+          show_position(&mut result, line, column_number);
+          writeln!(&mut result).unwrap();
+        }
+        VerboseErrorKind::Nom(nom_err) => {
+          writeln!(
+            &mut result,
+            "{i}: at line {line_number} column {column_number}, in {nom_err:?}:",
+          )
+          .unwrap();
+          show_position(&mut result, line, column_number);
+          writeln!(&mut result).unwrap();
+        }
       }
     }
-    // Because `write!` to a `String` is infallible, this `unwrap` is fine.
-    .unwrap();
   }
 
   result
+}
+
+fn show_position(result: &mut String, line: &str, column_number: usize) {
+  use std::fmt::Write;
+
+  const MAXIMUM_CONTEXT: usize = 40;
+
+  // column_number is assumed to be the 1-indexed byte offset of a valid character offset within line
+  let column_offset = column_number - 1;
+
+  let from_offset = column_offset.saturating_sub(MAXIMUM_CONTEXT);
+  // round to the next character boundary
+  let from_offset = line
+    .char_indices()
+    .find_map(|(i, _)| (i >= from_offset).then_some(i))
+    .unwrap_or(column_offset);
+
+  let to_offset = column_number
+    .saturating_add(MAXIMUM_CONTEXT + 1)
+    .min(line.len());
+  // round to the previous character boundary
+  let to_offset = line[column_number..]
+    .char_indices()
+    .map(|(i, _)| i + column_number)
+    .filter(|i| *i < to_offset)
+    .last()
+    .unwrap_or(column_number);
+
+  write!(
+    result,
+    "{line}\n\
+     {caret:>column$}\n",
+    caret = '^',
+    line = &line[from_offset..to_offset],
+    column = column_number.saturating_sub(from_offset),
+  )
+  .unwrap();
 }
 
 #[test]
@@ -257,6 +269,71 @@ fn issue_1027_convert_error_panic_nonempty() {
   let msg = convert_error(input, err);
   assert_eq!(
     msg,
-    "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n"
+    "0: at line 1 column 2:\na\n ^\nexpected \'b\', got end of input\n\n"
+  );
+}
+
+#[test]
+fn convert_error_long_line() {
+  use std::iter::repeat_n;
+
+  use nom::bytes::complete::{tag, take};
+  use nom::sequence::terminated;
+  use nom::Finish;
+  use nom::Parser;
+
+  const COUNT: usize = 0x10000;
+  let mut input = String::with_capacity(COUNT * 2 + 1);
+  input.extend(repeat_n('>', COUNT));
+  input.push('|');
+  input.extend(repeat_n('<', COUNT));
+
+  let err: VerboseError<&str> = terminated(take(COUNT), tag("_"))
+    .parse(&*input)
+    .finish()
+    .unwrap_err();
+
+  let msg = convert_error(&*input, err);
+  assert_eq!(
+    msg,
+    r#"0: at line 1 column 65537, in Tag:
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>|<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                        ^
+
+"#
+  );
+}
+
+#[test]
+fn convert_error_long_line_unicode() {
+  use std::iter::repeat_n;
+
+  use nom::bytes::complete::{tag, take};
+  use nom::sequence::terminated;
+  use nom::Finish;
+  use nom::Parser;
+
+  // This is the same test as the non-Unicode version, but using 3-byte Unicode characters to check
+  // for character boundary problems.
+
+  const COUNT: usize = 0x10000;
+  let mut input = String::with_capacity(COUNT * 3 * 2 + 1);
+  input.extend(repeat_n('≥', COUNT));
+  input.push('|');
+  input.extend(repeat_n('≤', COUNT));
+
+  let err: VerboseError<&str> = terminated(take(COUNT), tag("_"))
+    .parse(&*input)
+    .finish()
+    .unwrap_err();
+
+  let msg = convert_error(&*input, err);
+  assert_eq!(
+    msg,
+    r#"0: at line 1 column 196609, in Tag:
+≥≥≥≥≥≥≥≥≥≥≥≥≥|≤≤≤≤≤≤≤≤≤≤≤≤≤
+                                        ^
+
+"#
   );
 }
