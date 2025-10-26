@@ -46,11 +46,11 @@ pub enum Err<E> {
 
 Now the error type is completely generic, so you can choose exactly
 what you need, from erasing errors entirely, to reproducing the
-`verbose-errors` feature with the [`VerboseError` type](https://docs.rs/nom/latest/nom/error/struct.VerboseError.html).
-The [`ErrorKind` enum](https://docs.rs/nom/latest/nom/error/enum.ErrorKind.html)
+`verbose-errors` feature with the [`VerboseError` type](crate::error::VerboseError).
+The [`ErrorKind` enum](crate::error::ErrorKind)
 is not generic now: It does not need to hold a custom error type.
 
-Any error type has to implement the [`ParseError` trait](https://docs.rs/nom/latest/nom/error/trait.ParseError.html)
+Any error type has to implement the [`ParseError` trait](crate::error::ParseError)
 that specifies methods to build an error from a position in input data,
 and an `ErrorKind`, or another error, etc.
 

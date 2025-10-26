@@ -458,3 +458,19 @@ pub mod number;
 #[cfg(all(feature = "std", any(doc, doctest, feature = "docsrs")))]
 #[cfg_attr(any(doc, doctest, feature = "docsrs"), doc = include_str!("../doc/nom_recipes.md"))]
 pub mod recipes {}
+
+#[cfg(all(feature = "std", any(doc, doctest, feature = "docsrs")))]
+#[cfg_attr(any(doc, doctest, feature = "docsrs"), doc = include_str!("../doc/home.md"))]
+pub mod guides {
+
+  #[doc = include_str!("../doc/choosing_a_combinator.md")]
+  pub mod choosing_a_combinator {}
+  #[doc = include_str!("../doc/custom_input_types.md")]
+  pub mod custom_input_types {}
+  #[doc = include_str!("../doc/error_management.md")]
+  pub mod error_management {}
+  #[doc = include_str!("../doc/making_a_new_parser_from_scratch.md")]
+  pub mod making_a_new_parser_from_scratch {}
+  #[doc = include_str!("../doc/upgrading_to_nom_5.md")]
+  pub mod upgrading_to_nom_5 {}
+}
