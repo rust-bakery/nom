@@ -332,6 +332,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [Furigana](https://github.com/sachaarbonel/furigana.rs),
 [Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser),
 [NBT](https://github.com/phoenixr-codes/mcnbt)
+[Prometheus chunkenc](https://github.com/SINTEF/rusty-chunkenc)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/rust-bakery/nom/issues/14).
 
