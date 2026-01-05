@@ -1868,3 +1868,255 @@ where
     Ok((input, acc))
   }
 }
+
+/// A modified version of [`SeparatedList0`] that accepts a trailing separator.
+#[cfg(feature = "alloc")]
+struct SeparatedTrailingList0<Item, Sep> {
+  item: Item,
+  separator: Sep,
+}
+
+impl<I, E, Item, Sep> Parser<I> for SeparatedTrailingList0<Item, Sep>
+where
+  I: Input + Clone,
+  E: ParseError<I>,
+  Item: Parser<I, Error = E>,
+  Sep: Parser<I, Error = E>,
+{
+  type Output = Vec<<Item as Parser<I>>::Output>;
+  type Error = E;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    mut input: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
+
+    loop {
+      let len = input.input_len();
+
+      let tail_item = match self
+        .item
+        .process::<OutputM<OM::Output, Check, OM::Incomplete>>(input.clone())
+      {
+        Err(Err::Error(_)) => return Ok((input, res)),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(e)) => {
+          eprintln!("incomplete item, needed: {e:?}");
+          return Err(Err::Incomplete(e));
+        }
+        // when an item was parsed, append it to the result vector.
+        Ok((tail_item, o)) => {
+          // append parsed item to result
+          res = OM::Output::combine(res, o, |mut res, o| {
+            res.push(o);
+            res
+          });
+          eprintln!("appended parsed item");
+          tail_item
+        }
+      };
+      let tail_item_len = tail_item.input_len();
+
+      let tail_sep = match self
+        .separator
+        .process::<OutputM<Check, Check, OM::Incomplete>>(tail_item.clone())
+      {
+        Err(Err::Error(_)) => return Ok((tail_item, res)),
+        Err(Err::Incomplete(e)) => {
+          eprintln!("incomplete separator, needed: {e:?}");
+          return Ok((tail_item, res));
+        }
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Ok((tail_sep, _)) => {
+          if tail_sep.input_len() == len {
+            return Err(Err::Error(OM::Error::bind(|| {
+              <Sep as Parser<I>>::Error::from_error_kind(input, ErrorKind::SeparatedList)
+            })));
+          }
+          tail_sep
+        }
+      };
+      input = tail_sep;
+    }
+  }
+}
+
+/// Alternates between two parsers to produce a list of elements
+/// until one of them returns [`Err::Error`].
+///
+/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated.
+/// To instead chain an error up, see [`cut`][crate::combinator::cut].
+///
+/// Consumes a trailing separator if it is present.
+///
+/// *Note*: Both the separator and item parsers may not accept empty inputs
+/// (like `alpha0` or `digit0`), otherwise `tolerant_list0` will return an error,
+/// to prevent going into an infinite loop.
+///
+/// *Note*: The `separator` parser may not accept empty inputs,
+/// due to ambiguity problems when using streaming parsers.
+///
+/// # Arguments
+/// * `separator` Parses the separator after a list element.
+/// * `item` Parses the elements of the list.
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
+/// use nom::multi::separated_trailing_list0;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   separated_trailing_list0(tag("|"), tag("abc")).parse(s)
+/// }
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+/// assert_eq!(parser("abc|abc|abc|"), Ok(("", vec!["abc", "abc", "abc"])));
+///
+/// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
+/// assert_eq!(parser("abc|123abc"), Ok(("123abc", vec!["abc"])));
+///
+/// assert_eq!(parser("abc|def"), Ok(("def", vec!["abc"])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
+/// ```
+#[cfg(feature = "alloc")]
+pub fn separated_trailing_list0<I, E, Item, Sep>(
+  separator: Sep,
+  item: Item,
+) -> impl Parser<I, Output = Vec<<Item as Parser<I>>::Output>, Error = E>
+where
+  I: Input + Clone,
+  Item: Parser<I, Error = E>,
+  Sep: Parser<I, Error = E>,
+  E: ParseError<I>,
+{
+  SeparatedTrailingList0 { item, separator }
+}
+
+/// A modified version of [`SeparatedList1`] that accepts a trailing separator.
+#[cfg(feature = "alloc")]
+struct SeparatedTrailingList1<Item, Sep> {
+  item: Item,
+  separator: Sep,
+}
+
+impl<I, E, Item, Sep> Parser<I> for SeparatedTrailingList1<Item, Sep>
+where
+  E: ParseError<I>,
+  I: Input + Clone,
+  Item: Parser<I, Error = E>,
+  Sep: Parser<I, Error = E>,
+{
+  type Output = Vec<<Item as Parser<I>>::Output>;
+  type Error = E;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    mut input: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
+
+    // parse the required first item
+    match self.item.process::<OM>(input.clone()) {
+      Err(e) => return Err(e),
+      Ok((tail_item, o)) => {
+        res = OM::Output::combine(res, o, |mut res, o| {
+          res.push(o);
+          res
+        });
+        input = tail_item;
+      }
+    }
+
+    loop {
+      let len = input.input_len();
+      match self
+        .separator
+        .process::<OutputM<Check, Check, OM::Incomplete>>(input.clone())
+      {
+        // missing trailing separator is allowed.
+        Err(Err::Error(_)) => return Ok((input, res)),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+
+        Ok((tail_sep, _)) => {
+          if tail_sep.input_len() == len {
+            return Err(Err::Error(OM::Error::bind(|| {
+              <Sep as Parser<I>>::Error::from_error_kind(input, ErrorKind::SeparatedList)
+            })));
+          }
+          match self
+            .item
+            .process::<OutputM<OM::Output, Check, OM::Incomplete>>(tail_sep.clone())
+          {
+            // missing element after separator means a trailing separator, which is allowed
+            Err(Err::Error(_)) => return Ok((tail_sep, res)),
+            Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+
+            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+            Ok((tail_item, o)) => {
+              // infinite loop check: the parser must always consume
+              if tail_item.input_len() == len {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  <Item as Parser<I>>::Error::from_error_kind(input, ErrorKind::SeparatedList)
+                })));
+              }
+
+              res = OM::Output::combine(res, o, |mut res, o| {
+                res.push(o);
+                res
+              });
+              input = tail_item;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/// Alternates between two parsers to produce a list of elements
+/// until one of them returns [`Err::Error`].
+///
+/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated.
+/// To instead chain an error up, see [`cut`][crate::combinator::cut].
+///
+/// Consumes a trailing separator if it is present.
+///
+/// *Note*: Both the separator and item parsers may not accept empty inputs
+/// (like `alpha0` or `digit0`), otherwise `tolerant_list0` will return an error,
+/// to prevent going into an infinite loop.
+///
+/// # Arguments
+/// * `separator` Parses the separator after a list element.
+/// * `item` Parses the elements of the list.
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
+/// use nom::multi::separated_trailing_list1;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   separated_trailing_list1(tag("|"), tag("abc")).parse(s)
+/// }
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+/// assert_eq!(parser("abc|abc|abc|"), Ok(("", vec!["abc", "abc", "abc"])));
+/// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
+/// assert_eq!(parser("abc|123abc"), Ok(("123abc", vec!["abc"])));
+/// assert_eq!(parser("abc|def"), Ok(("def", vec!["abc"])));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
+/// ```
+#[cfg(feature = "alloc")]
+pub fn separated_trailing_list1<I, E, Item, Sep>(
+  separator: Sep,
+  item: Item,
+) -> impl Parser<I, Output = Vec<<Item as Parser<I>>::Output>, Error = E>
+where
+  I: Input + Clone,
+  Item: Parser<I, Error = E>,
+  Sep: Parser<I, Error = E>,
+  E: ParseError<I>,
+{
+  SeparatedTrailingList1 { item, separator }
+}

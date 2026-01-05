@@ -14,7 +14,8 @@ use crate::{
   lib::std::vec::Vec,
   multi::{
     count, fold, fold_many0, fold_many1, fold_many_m_n, length_count, many, many0, many1, many_m_n,
-    many_till, separated_list0, separated_list1,
+    many_till, separated_list0, separated_list1, separated_trailing_list0,
+    separated_trailing_list1,
   },
 };
 
@@ -113,6 +114,176 @@ fn separated_list1_test() {
   assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+}
+
+#[test]
+#[cfg(feature = "alloc")]
+fn separated_trailing_list0_test() {
+  use crate::bytes::complete::tag as ctag;
+  use crate::bytes::streaming::tag as stag;
+  use core::num::NonZeroUsize;
+
+  fn multi_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(ctag(","), ctag("abcd")).parse(i)
+  }
+  fn empty_item_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(ctag(","), ctag("")).parse(i)
+  }
+  fn empty_sep_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(ctag(""), ctag("abc")).parse(i)
+  }
+  fn long_sep_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(ctag(".."), ctag("abcd")).parse(i)
+  }
+  fn empty_both_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(ctag(""), ctag("")).parse(i)
+  }
+
+  fn multi_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(tag(","), tag("abcd")).parse(i)
+  }
+  fn empty_item_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(tag(","), tag("")).parse(i)
+  }
+  fn empty_sep_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(tag(""), tag("abc")).parse(i)
+  }
+  fn long_sep_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(tag(".."), tag("abcd")).parse(i)
+  }
+  fn empty_both_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_trailing_list0(tag(""), tag("")).parse(i)
+  }
+
+  let a = &b"abcdef"[..];
+  let b = &b"abcd,abcdef"[..];
+  let c = &b"azerty"[..];
+  let d = &b",,abc"[..];
+  let e = &b"abcd,abcd,ef"[..];
+  let f = &b"abc"[..];
+  let g = &b"abcd."[..];
+  let h = &b"abcd,abc"[..];
+  let i = &b"abcabc"[..];
+  let j = &b""[..];
+
+  let res1 = vec![&b"abcd"[..]];
+  assert_eq!(multi_complete(a), Ok((&b"ef"[..], res1)));
+  let res1 = vec![&b"abcd"[..]];
+  assert_eq!(multi_streaming(a), Ok((&b"ef"[..], res1)));
+
+  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_complete(b), Ok((&b"ef"[..], res2)));
+  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_streaming(b), Ok((&b"ef"[..], res2)));
+
+  assert_eq!(multi_complete(c), Ok((&b"azerty"[..], Vec::new())));
+  assert_eq!(multi_streaming(c), Ok((&b"azerty"[..], Vec::new())));
+
+  let res3 = vec![&b""[..], &b""[..], &b""[..]];
+  assert_eq!(empty_item_complete(d), Ok((&b"abc"[..], res3)));
+  let res3 = vec![&b""[..], &b""[..], &b""[..]];
+  assert_eq!(empty_item_streaming(d), Ok((&b"abc"[..], res3)));
+
+  assert_eq!(
+    empty_sep_complete(i),
+    Ok((&b""[..], vec![&b"abc"[..], &b"abc"[..]]))
+  );
+  assert_eq!(empty_sep_streaming(i), Err(Err::Incomplete(Needed::new(3))));
+
+  assert_eq!(
+    empty_both_complete(i),
+    Err(Err::Error(error_position!(i, ErrorKind::SeparatedList)))
+  );
+  assert_eq!(
+    empty_both_streaming(i),
+    Err(Err::Error(error_position!(i, ErrorKind::SeparatedList)))
+  );
+
+  let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_complete(e), Ok((&b"ef"[..], res4)));
+  let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_streaming(e), Ok((&b"ef"[..], res4)));
+
+  assert_eq!(multi_complete(f), Ok((&b"abc"[..], Vec::new())));
+  assert_eq!(multi_streaming(f), Err(Err::Incomplete(Needed::new(1))));
+
+  assert_eq!(long_sep_complete(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
+  assert_eq!(long_sep_streaming(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
+
+  assert_eq!(multi_complete(h), Ok((&b"abc"[..], vec![&b"abcd"[..]])));
+  assert_eq!(multi_streaming(h), Err(Err::Incomplete(Needed::new(1))));
+
+  assert_eq!(multi_complete(j), Ok((&b""[..], Vec::new())));
+  assert_eq!(multi_streaming(j), Err(Err::Incomplete(Needed::new(4))));
+
+  let a = &b"abcd,ef"[..];
+  let b = &b"abcd,abcd,ef"[..];
+  let c = &b"azerty"[..];
+  let d = &b",,abc"[..];
+  let e = &b"abcd,abcd,,ef"[..];
+  let f = &b"abc"[..];
+  let g = &b"abcd."[..];
+  let h = &b"abcd,abc"[..];
+  let i = &b"abcabc"[..];
+  let j = &b","[..];
+
+  let res1 = vec![&b"abcd"[..]];
+  assert_eq!(multi_complete(a), Ok((&b"ef"[..], res1)));
+  let res1 = vec![&b"abcd"[..]];
+  assert_eq!(multi_streaming(a), Ok((&b"ef"[..], res1)));
+
+  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_complete(b), Ok((&b"ef"[..], res2)));
+  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_streaming(b), Ok((&b"ef"[..], res2)));
+
+  assert_eq!(multi_complete(c), Ok((&b"azerty"[..], Vec::new())));
+  assert_eq!(multi_streaming(c), Ok((&b"azerty"[..], Vec::new())));
+
+  let res3 = vec![&b""[..], &b""[..], &b""[..]];
+  assert_eq!(empty_item_complete(d), Ok((&b"abc"[..], res3)));
+  let res3 = vec![&b""[..], &b""[..], &b""[..]];
+  assert_eq!(
+    empty_item_streaming(d),
+    Ok((&b"abc"[..], vec![&b""[..], &b""[..], &b""[..]]))
+  );
+
+  assert_eq!(
+    empty_sep_complete(i),
+    Ok((&b""[..], vec![&b"abc"[..], &b"abc"[..]]))
+  );
+  assert_eq!(empty_sep_streaming(i), Err(Err::Incomplete(Needed::new(3))));
+
+  assert_eq!(
+    empty_both_complete(i),
+    Err(Err::Error(error_position!(i, ErrorKind::SeparatedList)))
+  );
+  assert_eq!(
+    empty_both_streaming(i),
+    Err(Err::Error(error_position!(i, ErrorKind::SeparatedList)))
+  );
+
+  let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_complete(e), Ok((&b",ef"[..], res4)));
+  let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi_streaming(e), Ok((&b",ef"[..], res4)));
+
+  assert_eq!(multi_complete(f), Ok((&b"abc"[..], Vec::new())));
+  assert_eq!(multi_streaming(f), Err(Err::Incomplete(Needed::new(1))));
+
+  assert_eq!(long_sep_complete(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
+  assert_eq!(long_sep_streaming(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
+
+  assert_eq!(multi_complete(h), Ok((&b"abc"[..], vec![&b"abcd"[..]])));
+  assert_eq!(multi_streaming(h), Err(Err::Incomplete(Needed::new(1))));
+
+  assert_eq!(multi_complete(j), Ok((&b","[..], Vec::new())));
+  assert_eq!(multi_streaming(j), Ok((&b","[..], vec![])));
+
+  let res5 = vec![&b""[..], &b""[..]];
+  assert_eq!(empty_item_complete(j), Ok((&b""[..], res5)));
+  let res5 = vec![&b""[..], &b""[..]];
+  assert_eq!(empty_item_complete(j), Ok((&b""[..], res5)));
 }
 
 #[test]
