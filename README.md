@@ -298,7 +298,7 @@ Here is a (non exhaustive) list of known projects using nom:
 - Cryptographic formats:
 [X.509](https://github.com/rusticata/x509-parser)
 - Network protocol formats:
-[Bencode](https://github.com/jbaum98/bencode.rs),
+[Bencode](https://codeberg.org/benjamingeer/bside),
 [D-Bus](https://github.com/toshokan/misato),
 [DHCP](https://github.com/rusticata/dhcp-parser),
 [HTTP](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http),
