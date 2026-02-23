@@ -155,7 +155,7 @@ macro_rules! alt_trait_inner(
   );
 );
 
-alt_trait!(A B C D E F G H I J K L M N O P Q R S T U);
+alt_trait!(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z AA AB AC AD);
 
 // Manually implement Alt for (A,), the 1-tuple type
 impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output = Output, Error = Error>>
@@ -369,4 +369,13 @@ permutation_trait!(
   FnS S s
   FnT T t
   FnU U u
+  FnV V v
+  FnW W w
+  FnX X x
+  FnY Y y
+  FnZ Z z
+  FnAA AA aa
+  FnAB AB ab
+  FnAC AC ac
+  FnAD AD ad
 );

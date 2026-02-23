@@ -20,4 +20,13 @@ macro_rules! succ (
   (18, $submac:ident ! ($($rest:tt)*)) => ($submac!(19, $($rest)*));
   (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
   (20, $submac:ident ! ($($rest:tt)*)) => ($submac!(21, $($rest)*));
+  (21, $submac:ident ! ($($rest:tt)*)) => ($submac!(22, $($rest)*));
+  (22, $submac:ident ! ($($rest:tt)*)) => ($submac!(23, $($rest)*));
+  (23, $submac:ident ! ($($rest:tt)*)) => ($submac!(24, $($rest)*));
+  (24, $submac:ident ! ($($rest:tt)*)) => ($submac!(25, $($rest)*));
+  (25, $submac:ident ! ($($rest:tt)*)) => ($submac!(26, $($rest)*));
+  (26, $submac:ident ! ($($rest:tt)*)) => ($submac!(27, $($rest)*));
+  (27, $submac:ident ! ($($rest:tt)*)) => ($submac!(28, $($rest)*));
+  (28, $submac:ident ! ($($rest:tt)*)) => ($submac!(29, $($rest)*));
+  (29, $submac:ident ! ($($rest:tt)*)) => ($submac!(30, $($rest)*));
 );
