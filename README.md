@@ -268,7 +268,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [Kconfig language](https://github.com/Mcdostone/nom-kconfig), [Askama templates](https://crates.io/crates/askama_parser/), [LP files](https://github.com/dandxy89/lp_parser_rs)
 - Programming languages:
 [PHP](https://github.com/tagua-vm/parser),
-[Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs),
+[CLI Calculator](https://codeberg.org/peter-scholtens/cli_calculator),
 [GLSL](https://sr.ht/~hadronized/glsl)
 [Lua](https://github.com/rozbb/nom-lua53),
 [Python](https://github.com/ProgVal/rust-python-parser),
