@@ -142,7 +142,10 @@ mod issue_647 {
 fn issue_848_overflow_incomplete_bits_to_bytes() {
   fn take(i: &[u8]) -> IResult<&[u8], &[u8]> {
     use nom::bytes::streaming::take;
-    take(0x2000000000000000_usize)(i)
+    // Needs to trip the `sz.checked_mul(8)` overflow in bits::bytes, i.e.
+    // larger than usize::MAX / 8. The previous literal (0x2000000000000000)
+    // assumed 64-bit usize and didn't even compile on 32-bit targets.
+    take(usize::MAX / 8 + 1)(i)
   }
   fn parser(i: &[u8]) -> IResult<&[u8], &[u8]> {
     use nom::bits::{bits, bytes};
