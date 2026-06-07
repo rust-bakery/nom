@@ -281,3 +281,16 @@ fn issue_1808_complete_string_parser_returns_wrong_slice() {
     Ok(("", "\n"))
   );
 }
+
+#[test]
+fn issue_1883_tag_no_case_unicode_char_boundary() {
+  use nom::bytes::complete::tag_no_case;
+
+  // U+212A KELVIN SIGN (3 bytes) case-folds to ASCII 'k'; the split must land on a
+  // char boundary, and the returned slice is the input's own prefix.
+  let r: IResult<&str, &str> = tag_no_case("k")("\u{212A}xyz");
+  assert_eq!(r, Ok(("xyz", "\u{212A}")));
+
+  let r: IResult<&str, &str> = tag_no_case("aktz")("a\u{212A}tz!");
+  assert_eq!(r, Ok(("!", "a\u{212A}tz")));
+}

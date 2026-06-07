@@ -142,7 +142,14 @@ where
     let t = self.tag.clone();
 
     match i.compare_no_case(t) {
-      CompareResult::Ok => Ok((i.take_from(tag_len), OM::Output::bind(|| i.take(tag_len)))),
+      CompareResult::Ok => {
+        // Case folding can change a char's byte length (e.g. U+212A KELVIN SIGN folds
+        // to 'k'), so split on the input's element boundary, not the tag length.
+        let index = i
+          .slice_index(self.tag.iter_elements().count())
+          .unwrap_or(tag_len);
+        Ok((i.take_from(index), OM::Output::bind(|| i.take(index))))
+      }
       CompareResult::Incomplete => {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(tag_len - i.input_len())))
