@@ -509,7 +509,7 @@ where
   }
 }
 
-/// Parser iplementation for verify
+/// Parser implementation for verify
 pub struct Verify<F, G, O2: ?Sized> {
   first: F,
   second: G,

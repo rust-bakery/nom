@@ -183,9 +183,9 @@ where
 ///
 /// # Evaluation order
 /// This parser reads expressions from left to right and folds operations as soon as possible. This
-/// behaviour is only important when using an operator grammar that allows for ambigious expressions.
+/// behaviour is only important when using an operator grammar that allows for ambiguous expressions.
 ///
-/// For example, the expression `-a++**b` is ambigious with the following precedence.
+/// For example, the expression `-a++**b` is ambiguous with the following precedence.
 ///
 /// | Operator | Position | Precedence | Associativity |
 /// |----------|----------|------------|---------------|
@@ -376,8 +376,8 @@ where
 /// In a LALR grammar a left recursive operator is usually built with a rule syntax such as:
 ///  * A := A op B | B
 ///
-/// If you try to parse that wth [`alt`][nom::branch::alt] it will fail with a stack overflow
-/// because the recusion is unlimited. This function solves this problem by converting the recusion
+/// If you try to parse that with [`alt`][nom::branch::alt] it will fail with a stack overflow
+/// because the recursion is unlimited. This function solves this problem by converting the recursion
 /// into an iteration.
 ///
 /// Compare with a right recursive operator, that in LALR would be:

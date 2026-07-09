@@ -1,4 +1,4 @@
-//! # Langage parsing combinators for the nom parser combinators library
+//! # Language parsing combinators for the nom parser combinators library
 //!
 //! nom is a parser combinator library with a focus on safe parsing,
 //! streaming patterns, and zero copy.
