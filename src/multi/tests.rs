@@ -14,14 +14,14 @@ use crate::{
   lib::std::vec::Vec,
   multi::{
     count, fold, fold_many0, fold_many1, fold_many_m_n, length_count, many, many0, many1, many_m_n,
-    many_till, separated_list0, separated_list1, separated_trailing_list0,
-    separated_trailing_list1,
+    many_till, separated_list0, separated_list1, separated_list_trailing0,
   },
 };
 
 #[test]
 #[cfg(feature = "alloc")]
 fn separated_list0_test() {
+  use crate::bytes::streaming::tag as streaming_tag;
   use core::num::NonZeroUsize;
 
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
@@ -118,41 +118,40 @@ fn separated_list1_test() {
 
 #[test]
 #[cfg(feature = "alloc")]
-fn separated_trailing_list0_test() {
+fn separated_list_traling0_test() {
   use crate::bytes::complete::tag as ctag;
-  use crate::bytes::streaming::tag as stag;
-  use core::num::NonZeroUsize;
+  use crate::bytes::streaming::tag as streaming_tag;
 
   fn multi_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(ctag(","), ctag("abcd")).parse(i)
+    separated_list_trailing0(ctag(","), ctag("abcd")).parse(i)
   }
   fn empty_item_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(ctag(","), ctag("")).parse(i)
+    separated_list_trailing0(ctag(","), ctag("")).parse(i)
   }
   fn empty_sep_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(ctag(""), ctag("abc")).parse(i)
+    separated_list_trailing0(ctag(""), ctag("abc")).parse(i)
   }
   fn long_sep_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(ctag(".."), ctag("abcd")).parse(i)
+    separated_list_trailing0(ctag(".."), ctag("abcd")).parse(i)
   }
   fn empty_both_complete(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(ctag(""), ctag("")).parse(i)
+    separated_list_trailing0(ctag(""), ctag("")).parse(i)
   }
 
   fn multi_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(tag(","), tag("abcd")).parse(i)
+    separated_list_trailing0(tag(","), streaming_tag("abcd")).parse(i)
   }
   fn empty_item_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(tag(","), tag("")).parse(i)
+    separated_list_trailing0(tag(","), streaming_tag("")).parse(i)
   }
   fn empty_sep_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(tag(""), tag("abc")).parse(i)
+    separated_list_trailing0(tag(""), streaming_tag("abc")).parse(i)
   }
   fn long_sep_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(tag(".."), tag("abcd")).parse(i)
+    separated_list_trailing0(tag(".."), streaming_tag("abcd")).parse(i)
   }
   fn empty_both_streaming(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_trailing_list0(tag(""), tag("")).parse(i)
+    separated_list_trailing0(tag(""), streaming_tag("")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -208,7 +207,7 @@ fn separated_trailing_list0_test() {
   assert_eq!(multi_streaming(f), Err(Err::Incomplete(Needed::new(1))));
 
   assert_eq!(long_sep_complete(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
-  assert_eq!(long_sep_streaming(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
+  assert_eq!(long_sep_streaming(g), Err(Err::Incomplete(Needed::new(1))));
 
   assert_eq!(multi_complete(h), Ok((&b"abc"[..], vec![&b"abcd"[..]])));
   assert_eq!(multi_streaming(h), Err(Err::Incomplete(Needed::new(1))));
@@ -232,21 +231,18 @@ fn separated_trailing_list0_test() {
   let res1 = vec![&b"abcd"[..]];
   assert_eq!(multi_streaming(a), Ok((&b"ef"[..], res1)));
 
-  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  let res2 = vec![&b"abcd"[..]; 2];
   assert_eq!(multi_complete(b), Ok((&b"ef"[..], res2)));
-  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  let res2 = vec![&b"abcd"[..]; 2];
   assert_eq!(multi_streaming(b), Ok((&b"ef"[..], res2)));
 
   assert_eq!(multi_complete(c), Ok((&b"azerty"[..], Vec::new())));
   assert_eq!(multi_streaming(c), Ok((&b"azerty"[..], Vec::new())));
 
-  let res3 = vec![&b""[..], &b""[..], &b""[..]];
+  let res3 = vec![&b""[..]; 3];
   assert_eq!(empty_item_complete(d), Ok((&b"abc"[..], res3)));
-  let res3 = vec![&b""[..], &b""[..], &b""[..]];
-  assert_eq!(
-    empty_item_streaming(d),
-    Ok((&b"abc"[..], vec![&b""[..], &b""[..], &b""[..]]))
-  );
+  let res3 = vec![&b""[..]; 3];
+  assert_eq!(empty_item_streaming(d), Ok((&b"abc"[..], res3)));
 
   assert_eq!(
     empty_sep_complete(i),
@@ -272,7 +268,7 @@ fn separated_trailing_list0_test() {
   assert_eq!(multi_streaming(f), Err(Err::Incomplete(Needed::new(1))));
 
   assert_eq!(long_sep_complete(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
-  assert_eq!(long_sep_streaming(g), Ok((&b"."[..], vec![&b"abcd"[..]])));
+  assert_eq!(long_sep_streaming(g), Err(Err::Incomplete(Needed::new(1))));
 
   assert_eq!(multi_complete(h), Ok((&b"abc"[..], vec![&b"abcd"[..]])));
   assert_eq!(multi_streaming(h), Err(Err::Incomplete(Needed::new(1))));
