@@ -8,9 +8,9 @@ use core::{
 use crate::{
   branch::alt,
   character::{char, digit1},
-  combinator::{cut, map, opt, recognize},
+  combinator::{cut, eof, map, opt, recognize},
   error::{make_error, ErrorKind, ParseError},
-  sequence::pair,
+  sequence::{pair, preceded},
   AsBytes, AsChar, Compare, Either, Emit, Err, Input, IsStreaming, Mode, Needed, Offset, OutputM,
   Parser,
 };
@@ -1317,7 +1317,7 @@ where
       opt((
         alt((char('e'), char('E'))),
         opt(alt((char('+'), char('-')))),
-        cut(digit1())
+        alt((digit1(), preceded(eof, cut(digit1()))))
       ))
   ))
 }
@@ -1463,6 +1463,11 @@ mod tests {
       );
       assert_parse!(double().parse_complete(test), Ok(("", expected64)));
     }
+
+    assert_parse!(
+      recognize_float().parse_complete("123episode"),
+      Ok(("episode", "123"))
+    );
 
     let remaining_exponent = "-1.234E-";
     assert_parse!(

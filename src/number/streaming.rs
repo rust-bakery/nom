@@ -3,10 +3,10 @@
 use crate::branch::alt;
 use crate::bytes::streaming::tag;
 use crate::character::streaming::{char, digit1, sign};
-use crate::combinator::{cut, map, opt, recognize};
+use crate::combinator::{cut, eof, map, opt, recognize};
 use crate::error::{ErrorKind, ParseError};
 use crate::lib::std::ops::{Add, Shl};
-use crate::sequence::pair;
+use crate::sequence::{pair, preceded};
 use crate::traits::{AsBytes, AsChar, Compare, Offset};
 use crate::{internal::*, Input};
 
@@ -1224,7 +1224,7 @@ where
       opt((
         alt((char('e'), char('E'))),
         opt(alt((char('+'), char('-')))),
-        cut(digit1)
+        alt((digit1, preceded(eof, cut(digit1))))
       ))
   )).parse(input)
 }
@@ -1936,6 +1936,8 @@ mod tests {
       assert_parse!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
       assert_parse!(double(&larger[..]), Ok((";", expected64)));
     }
+
+    assert_parse!(recognize_float("123episode"), Ok(("episode", "123")));
 
     let remaining_exponent = "-1.234E-";
     assert_parse!(
