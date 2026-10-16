@@ -54,8 +54,9 @@ of lexemes.
 
 ### `// C++/EOL-style comments`
 
-This version uses `%` to start a comment, does not consume the newline character, and returns an
-output of `()`.
+This version uses `//` to start a comment, leaves the line ending unconsumed, and returns
+an output of `()`. The comment body may be empty, and the last line need not end with a newline.
+To use a different marker, such as `%`, replace `tag("//")` with `tag("%")`.
 
 ```rust
 use nom::{
@@ -64,23 +65,29 @@ use nom::{
   error::ParseError,
   combinator::value,
   sequence::pair,
-  bytes::complete::is_not,
-  character::complete::char,
+  bytes::complete::{tag, take_till},
 };
 
 pub fn peol_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E>
 {
   value(
     (), // Output is thrown away.
-    pair(char('%'), is_not("\n\r"))
+    pair(tag("//"), take_till(|c| c == '\n' || c == '\r'))
   ).parse(i)
 }
+
+assert_eq!(peol_comment::<nom::error::Error<_>>("// comment\nrest"), Ok(("\nrest", ())));
+assert_eq!(peol_comment::<nom::error::Error<_>>("//\r\nrest"), Ok(("\r\nrest", ())));
+assert_eq!(peol_comment::<nom::error::Error<_>>("//"), Ok(("", ())));
+assert!(peol_comment::<nom::error::Error<_>>("/not a comment").is_err());
+
 ```
 
 ### `/* C-style comments */`
 
-Inline comments surrounded with sentinel tags `(*` and `*)`. This version returns an output of `()`
-and does not handle nested comments.
+Inline comments surrounded with sentinel tags `/*` and `*/`. This version returns an output of `()`
+and stops at the first closing tag; it does not handle nested comments. For Pascal-style comments,
+replace the tags with `(*` and `*)`.
 
 ```rust
 use nom::{
@@ -95,12 +102,17 @@ pub fn pinline_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a st
   value(
     (), // Output is thrown away.
     (
-      tag("(*"),
-      take_until("*)"),
-      tag("*)")
+      tag("/*"),
+      take_until("*/"),
+      tag("*/")
     )
   ).parse(i)
 }
+
+assert_eq!(pinline_comment::<nom::error::Error<_>>("/* comment */rest"), Ok(("rest", ())));
+assert_eq!(pinline_comment::<nom::error::Error<_>>("/**/rest"), Ok(("rest", ())));
+assert!(pinline_comment::<nom::error::Error<_>>("/* unterminated").is_err());
+
 ```
 
 ## Identifiers
